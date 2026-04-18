@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import { z } from "zod";
@@ -20,10 +22,18 @@ import { createTransactionSchema } from "./schemas/TransactionSchema.js";
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 await connectDB();
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
