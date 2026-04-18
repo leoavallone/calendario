@@ -157,9 +157,13 @@
         .notification.error { background: var(--danger); }
 
         @media (max-width: 768px) {
+            .container { padding: 10px; }
             .dashboard-cards { grid-template-columns: 1fr; }
-            header { flex-direction: column; text-align: center; gap: 15px; }
+            header { flex-direction: column; text-align: center; gap: 15px; height: auto; padding: 20px 15px; }
             .navbar { width: 100%; justify-content: center; }
+            .user-selector { width: 100%; justify-content: center; }
+            .header-right { width: 100%; align-items: center; }
+            .card-header { flex-wrap: wrap; gap: 10px; }
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { position: absolute; top: -9999px; left: -9999px; }
             tr { border: 1px solid var(--border); margin-bottom: 10px; border-radius: 10px; padding: 10px; }

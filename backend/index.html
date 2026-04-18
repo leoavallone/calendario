@@ -694,23 +694,48 @@
         }
 
         @media (max-width: 640px) {
+            .container {
+                padding: 10px;
+            }
+
             .calendar-grid {
                 gap: 4px;
             }
-            
+
             .calendar-day {
                 font-size: 0.875rem;
             }
-            
+
             header {
                 flex-direction: column;
                 gap: 15px;
                 text-align: center;
+                height: auto;
+                padding: 20px 15px;
             }
 
             .navbar {
                 width: 100%;
                 justify-content: center;
+            }
+
+            .header-right {
+                width: 100%;
+                align-items: center;
+            }
+
+            .user-selector {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .card-header {
+                flex-wrap: wrap;
+                gap: 10px;
             }
         }
     </style>
@@ -1055,7 +1080,7 @@
                 throw new Error('Agendamento não encontrado');
             }
             try {
-                const res = await fetch(`/api/appointments/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/appointments/${id}?userId=${userId}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Erro ao deletar na API');
                 
                 const deleted = userAppointments.splice(index, 1)[0];
