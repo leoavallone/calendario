@@ -863,7 +863,7 @@
         // ─── Carrega usuários da API ───────────────────────────────────────────────
         async function loadUsers() {
             try {
-                const res = await fetch('http://localhost:3000/api/users');
+                const res = await fetch('/api/users');
                 if (!res.ok) throw new Error('Falha ao buscar usuários');
                 usersData = await res.json();
 
@@ -933,7 +933,7 @@
         async function checkAvailability(userId, date) {
             try {
                 const res = await fetch(
-                    `http://localhost:3000/api/availability?userId=${userId}&date=${date}`
+                    `/api/availability?userId=${userId}&date=${date}`
                 );
                 if (!res.ok) throw new Error('Falha na API de disponibilidade');
                 const data = await res.json();
@@ -972,7 +972,7 @@
             }
 
             try {
-                const res = await fetch('http://localhost:3000/api/appointments', {
+                const res = await fetch('/api/appointments', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -1022,7 +1022,7 @@
             }
 
             try {
-                const res = await fetch(`http://localhost:3000/api/appointments/${id}`, {
+                const res = await fetch(`/api/appointments/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -1055,7 +1055,7 @@
                 throw new Error('Agendamento não encontrado');
             }
             try {
-                const res = await fetch(`http://localhost:3000/api/appointments/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/appointments/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Erro ao deletar na API');
                 
                 const deleted = userAppointments.splice(index, 1)[0];
@@ -1092,7 +1092,7 @@
 
         async function loadAppointments(userId) {
             try {
-                const res = await fetch(`http://localhost:3000/api/appointments?userId=${userId}`);
+                const res = await fetch(`/api/appointments?userId=${userId}`);
                 if (!res.ok) throw new Error('Erro ao carregar agendamentos');
                 const data = await res.json();
                 
@@ -1370,9 +1370,9 @@
 </body>
 </html>
 
-<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io('http://localhost:3000');
+    const socket = io();
     socket.on('refreshData', async () => {
         if (currentUser) {
             await loadAppointments(currentUser._id);
