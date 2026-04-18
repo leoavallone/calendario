@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoqIA - Sistema de Agendamentos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary: #f8fafc;
+            --accent: #60a5fa;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --white: #ffffff;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 130px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--white);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .user-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.15);
+            padding: 10px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-selector select {
+            background: var(--white);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--text);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+        }
+
+        @media (max-width: 968px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .calendar-header {
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary);
+            padding: 10px;
+            font-size: 0.875rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            background: var(--white);
+            font-weight: 600;
+        }
+
+        .calendar-day:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .calendar-day.selected {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+        }
+
+        .calendar-day.has-events::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .calendar-day.selected.has-events::after {
+            background: var(--white);
+        }
+
+        .calendar-day.other-month {
+            color: var(--text-light);
+            background: var(--secondary);
+        }
+
+        .events-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .event-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .event-time {
+            font-size: 0.875rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .event-title {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .event-description {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        .event-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .event-item:hover .event-actions {
+            opacity: 1;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-light);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: var(--secondary);
+            color: var(--text);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .api-docs {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: var(--white);
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .api-docs h2 {
+            color: var(--accent);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .endpoint {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .method {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .method.get { background: #10b981; }
+        .method.post { background: #3b82f6; }
+        .method.put { background: #f59e0b; }
+        .method.delete { background: #ef4444; }
+
+        .path {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .endpoint-description {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .params-table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .params-table th,
+        .params-table td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .params-table th {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .month-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background: var(--white);
+            border: 2px solid var(--border);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+            color: var(--primary);
+        }
+
+        .nav-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .current-month {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            text-transform: capitalize;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 2000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success { background: var(--success); }
+        .notification.error { background: var(--danger); }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 8px;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .time-slot:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .time-slot.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .time-slot.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--secondary);
+        }
+
+        .calendar-day.non-workday {
+            opacity: 0.35;
+            cursor: not-allowed;
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+            color: var(--text-light);
+        }
+
+        .calendar-day.non-workday:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: #e2e8f0;
+        }
+
+        .user-info-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .work-schedule-tag {
+            background: rgba(255,255,255,0.25);
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .non-workday-msg {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-light);
+        }
+
+        .non-workday-msg .icon { font-size: 36px; margin-bottom: 10px; }
+        .non-workday-msg p { font-size: 0.9rem; }
+
+        .navbar {
+            display: flex;
+            gap: 15px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 12px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .date-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 500;
+            margin-left: 2px;
+        }
+
+        .nav-link {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 640px) {
+            .calendar-grid {
+                gap: 4px;
+            }
+            
+            .calendar-day {
+                font-size: 0.875rem;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .navbar {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">📅</div>
+                <div>
+                    <h1>RoqIA</h1>
+                    <p style="opacity: 0.9; font-size: 0.875rem;">Sistema de Agendamentos</p>
+                </div>
+            </div>
+            <nav class="navbar">
+                <a href="index.html" class="nav-link active">📅 Agenda</a>
+                <a href="finance.html" class="nav-link">💰 Financeiro</a>
+            </nav>
+            <div class="header-right">
+                <div class="user-selector">
+                    <span>👤</span>
+                    <select id="userSelect" onchange="changeUser()">
+                        <option value="">Carregando...</option>
+                    </select>
+                </div>
+                <div id="workScheduleTag" class="work-schedule-tag" style="display:none"></div>
+            </div>
+        </header>
+
+        <div class="grid">
+            <div class="main-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>📆</span>
+                            Calendário
+                        </div>
+                        <button class="btn btn-primary" onclick="openModal()">
+                            <span>+</span>
+                            Novo Agendamento
+                        </button>
+                    </div>
+                    
+                    <div class="month-navigation">
+                        <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+                        <div class="current-month" id="currentMonth"></div>
+                        <button class="nav-btn" onclick="changeMonth(1)">›</button>
+                    </div>
+
+                    <div class="calendar-grid" id="calendarHeader">
+                        <div class="calendar-header">Dom</div>
+                        <div class="calendar-header">Seg</div>
+                        <div class="calendar-header">Ter</div>
+                        <div class="calendar-header">Qua</div>
+                        <div class="calendar-header">Qui</div>
+                        <div class="calendar-header">Sex</div>
+                        <div class="calendar-header">Sáb</div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+
+            </div>
+
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                        <div class="card-title">
+                            <span>📋</span>
+                            Agendamentos do Dia
+                        </div>
+                        <div class="date-subtitle" id="selectedDateDisplay">Hoje</div>
+                    </div>
+                    <div class="events-list" id="eventsList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>Selecione uma data para ver os agendamentos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>⏰</span>
+                            Horários Disponíveis
+                        </div>
+                    </div>
+                    <div class="time-slots" id="timeSlots">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Novo Agendamento</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="eventForm" onsubmit="saveEvent(event)">
+                <input type="hidden" id="eventId">
+                <div class="form-group">
+                    <label for="eventTitle">Título</label>
+                    <input type="text" id="eventTitle" required placeholder="Ex: Reunião com cliente">
+                </div>
+                <div class="form-group">
+                    <label for="eventDate">Data</label>
+                    <input type="date" id="eventDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventTime">Horário</label>
+                    <input type="time" id="eventTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventDescription">Descrição</label>
+                    <textarea id="eventDescription" placeholder="Detalhes do agendamento..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // ─── Estado da aplicação ───────────────────────────────────────────────────
+        let currentDate = new Date();
+        let selectedDate = new Date();
+        let currentUser = null;      // objeto usuário completo da API
+        let editingEventId = null;
+        let usersData = [];          // lista de usuários da API
+
+        // Mapeamento: índice JS (0=Dom) → chave workDays
+        const DAY_KEYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+
+        // Agendamentos cacheados (por userId) vindos da API
+        let appointments = {};
+
+        // ─── Inicialização ─────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadUsers();
+        });
+
+        // ─── Carrega usuários da API ───────────────────────────────────────────────
+        async function loadUsers() {
+            try {
+                const res = await fetch('http://localhost:3000/api/users');
+                if (!res.ok) throw new Error('Falha ao buscar usuários');
+                usersData = await res.json();
+
+                const select = document.getElementById('userSelect');
+                select.innerHTML = '';
+
+                usersData.forEach((user, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = user._id;
+                    opt.textContent = user.name;
+                    select.appendChild(opt);
+                    if (idx === 0) currentUser = user;
+                });
+
+                if (currentUser) {
+                    updateWorkScheduleTag();
+                    await loadAppointments(currentUser._id);
+                    renderCalendar();
+                    renderEventsList();
+                    renderTimeSlots();
+                    updateSelectedDateDisplay();
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('userSelect').innerHTML =
+                    '<option value="">Erro ao carregar usuários</option>';
+                showNotification('Não foi possível conectar à API', 'error');
+            }
+        }
+
+        function updateWorkScheduleTag() {
+            if (!currentUser) return;
+            const tag = document.getElementById('workScheduleTag');
+            const { start, end } = currentUser.workSchedule;
+            tag.textContent = `⏱ ${start} – ${end} | intervalo ${currentUser.interval} min`;
+            tag.style.display = 'inline-block';
+        }
+
+        // Retorna true se a data (objeto Date) é dia de trabalho do usuário
+        function isWorkDay(date) {
+            if (!currentUser) return true;
+            const key = DAY_KEYS[date.getDay()];
+            return currentUser.workDays[key] === true;
+        }
+
+        // Gera lista de horários com base em workSchedule + interval
+        function generateTimeSlots() {
+            if (!currentUser) return [];
+            const { start, end } = currentUser.workSchedule;
+            const interval = currentUser.interval || 30;
+
+            const [startH, startM] = start.split(':').map(Number);
+            const [endH, endM]     = end.split(':').map(Number);
+            const startMin = startH * 60 + startM;
+            const endMin   = endH   * 60 + endM;
+
+            const slots = [];
+            for (let m = startMin; m < endMin; m += interval) {
+                const h = String(Math.floor(m / 60)).padStart(2, '0');
+                const min = String(m % 60).padStart(2, '0');
+                slots.push(`${h}:${min}`);
+            }
+            return slots;
+        }
+
+        // ─── Verificação de disponibilidade (API real) ────────────────────────────
+        async function checkAvailability(userId, date) {
+            try {
+                const res = await fetch(
+                    `http://localhost:3000/api/availability?userId=${userId}&date=${date}`
+                );
+                if (!res.ok) throw new Error('Falha na API de disponibilidade');
+                const data = await res.json();
+                // data: { date, allSlots, bookedTimes, freeSlots }
+                return {
+                    allSlots:    data.allSlots    || [],
+                    freeSlots:   data.freeSlots   || [],
+                    bookedTimes: data.bookedTimes || [],
+                    date,
+                    userId
+                };
+            } catch (err) {
+                // fallback local se API cair
+                console.warn('Usando fallback local para slots:', err);
+                const slots = generateTimeSlots();
+                return { allSlots: slots, freeSlots: slots, bookedTimes: [], date, userId };
+            }
+        }
+
+        /**
+         * POST /api/appointments
+         * Cria novo agendamento
+         */
+        async function createAppointment(data) {
+            const { userId, title, date, time, description } = data;
+
+            // Validação
+            if (!userId || !title || !date || !time) {
+                throw new Error('Parâmetros obrigatórios faltando');
+            }
+
+            // Verifica disponibilidade
+            const availability = await checkAvailability(userId, date);
+            if (!availability.available.includes(time)) {
+                throw new Error('Horário indisponível ou já reservado');
+            }
+
+            try {
+                const res = await fetch('http://localhost:3000/api/appointments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Erro ao criar agendamento');
+                }
+                
+                const newAppointment = await res.json();
+                newAppointment.id = newAppointment._id;
+                
+                if (!appointments[userId]) appointments[userId] = [];
+                appointments[userId].push(newAppointment);
+
+                return { success: true, data: newAppointment, message: 'Agendamento criado com sucesso' };
+            } catch (err) {
+                throw err;
+            }
+        }
+
+        /**
+         * PUT /api/appointments/:id
+         * Atualiza agendamento
+         */
+        async function updateAppointment(id, data) {
+            const { userId, title, date, time, description } = data;
+            
+            const userAppointments = appointments[userId] || [];
+            const index = userAppointments.findIndex(apt => apt.id === id);
+            
+            if (index === -1) {
+                throw new Error('Agendamento não encontrado');
+            }
+
+            // Se mudou data/hora, verifica disponibilidade
+            if ((date && date !== userAppointments[index].date) || 
+                (time && time !== userAppointments[index].time)) {
+                const checkDate = date || userAppointments[index].date;
+                const checkTime = time || userAppointments[index].time;
+                const availability = await checkAvailability(userId, checkDate);
+                
+                if (!availability.available.includes(checkTime)) {
+                    throw new Error('Novo horário indisponível');
+                }
+            }
+
+            try {
+                const res = await fetch(`http://localhost:3000/api/appointments/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Erro ao atualizar agendamento');
+                }
+                
+                const updatedApt = await res.json();
+                updatedApt.id = updatedApt._id;
+                userAppointments[index] = updatedApt;
+
+                return { success: true, data: updatedApt, message: 'Agendamento atualizado com sucesso' };
+            } catch (err) {
+                throw err;
+            }
+        }
+
+        /**
+         * DELETE /api/appointments/:id
+         * Remove agendamento
+         */
+        async function deleteAppointment(id, userId) {
+            const userAppointments = appointments[userId] || [];
+            const index = userAppointments.findIndex(apt => apt.id === id);
+            
+            if (index === -1) {
+                throw new Error('Agendamento não encontrado');
+            }
+            try {
+                const res = await fetch(`http://localhost:3000/api/appointments/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Erro ao deletar na API');
+                
+                const deleted = userAppointments.splice(index, 1)[0];
+                return { success: true, data: deleted, message: 'Agendamento removido com sucesso' };
+            } catch(e) {
+                throw e;
+            }
+        }
+
+        // Funções auxiliares
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        async function changeUser() {
+            const id = document.getElementById('userSelect').value;
+            currentUser = usersData.find(u => u._id === id) || null;
+            updateWorkScheduleTag();
+            if (currentUser) {
+                await loadAppointments(currentUser._id);
+            }
+            renderCalendar();
+            renderEventsList();
+            renderTimeSlots();
+            if (currentUser) showNotification(`Usuário alterado para ${currentUser.name}`);
+        }
+
+        async function loadAppointments(userId) {
+            try {
+                const res = await fetch(`http://localhost:3000/api/appointments?userId=${userId}`);
+                if (!res.ok) throw new Error('Erro ao carregar agendamentos');
+                const data = await res.json();
+                
+                // Formato id compatível com frontend atual (mapeando _id para id)
+                appointments[userId] = data.map(apt => ({
+                    ...apt,
+                    id: apt._id
+                }));
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Atualiza título do mês
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            // Dias do mês anterior
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = daysInPrevMonth - i;
+                const dayEl = createDayElement(day, true);
+                grid.appendChild(dayEl);
+            }
+
+            // Dias do mês atual
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dateObj  = new Date(year, month, day);
+                const userId   = currentUser?._id;
+                const hasEvents = appointments[userId]?.some(apt => apt.date === dateStr);
+                const isSelected = selectedDate.getDate() === day &&
+                                   selectedDate.getMonth() === month &&
+                                   selectedDate.getFullYear() === year;
+                const isNonWork = !isWorkDay(dateObj);
+
+                const dayEl = createDayElement(day, false, hasEvents, isSelected, dateStr, isNonWork);
+                grid.appendChild(dayEl);
+            }
+
+            // Dias do próximo mês
+            const remainingCells = 42 - (firstDay + daysInMonth);
+            for (let day = 1; day <= remainingCells; day++) {
+                const dayEl = createDayElement(day, true);
+                grid.appendChild(dayEl);
+            }
+        }
+
+        function createDayElement(day, isOtherMonth, hasEvents = false, isSelected = false, dateStr = '', isNonWork = false) {
+            const div = document.createElement('div');
+            div.className = 'calendar-day';
+            div.textContent = day;
+
+            if (isOtherMonth) div.classList.add('other-month');
+            if (hasEvents)    div.classList.add('has-events');
+            if (isSelected)   div.classList.add('selected');
+            if (isNonWork)    div.classList.add('non-workday');
+
+            if (!isOtherMonth && !isNonWork) {
+                div.onclick = () => selectDate(day, dateStr);
+            }
+
+            return div;
+        }
+
+        function selectDate(day, dateStr) {
+            const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            if (!isWorkDay(d)) return; // bloqueia clique em dias não trabalhados
+            selectedDate = d;
+            renderCalendar();
+            renderEventsList();
+            renderTimeSlots();
+            updateSelectedDateDisplay();
+        }
+
+        function updateSelectedDateDisplay() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('selectedDateDisplay').textContent = 
+                selectedDate.toLocaleDateString('pt-BR', options);
+        }
+
+        async function renderEventsList() {
+            const dateStr = formatDate(selectedDate);
+            const list = document.getElementById('eventsList');
+
+            // Dia não útil
+            if (!isWorkDay(selectedDate)) {
+                list.innerHTML = `
+                    <div class="non-workday-msg">
+                        <div class="icon">🚫</div>
+                        <p>Este dia não é um dia de trabalho</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const userId = currentUser?._id;
+            const userAppointments = appointments[userId] || [];
+            const dayEvents = userAppointments
+                .filter(apt => apt.date === dateStr)
+                .sort((a, b) => a.time.localeCompare(b.time));
+
+            if (dayEvents.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>Nenhum agendamento para este dia</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = dayEvents.map(event => `
+                <div class="event-item" onclick="editEvent('${event.id}')">
+                    <div class="event-actions" onclick="event.stopPropagation()">
+                        <button class="btn-icon btn-edit" onclick="editEvent('${event.id}')" title="Editar">✏️</button>
+                        <button class="btn-icon btn-delete" onclick="deleteEvent('${event.id}')" title="Excluir">🗑️</button>
+                    </div>
+                    <div class="event-time">${event.time}</div>
+                    <div class="event-title">${event.title}</div>
+                    ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function renderTimeSlots() {
+            const container = document.getElementById('timeSlots');
+
+            // Dia não útil: limpa slots
+            if (!isWorkDay(selectedDate)) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const dateStr = formatDate(selectedDate);
+            const userId  = currentUser?._id;
+            const availability = await checkAvailability(userId, dateStr);
+            const { allSlots, freeSlots } = availability;
+
+            if (allSlots.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;">Nenhum horário configurado</p>';
+                return;
+            }
+
+            container.innerHTML = allSlots.map(time => {
+                const isFree     = freeSlots.includes(time);
+                const isSelected = document.getElementById('eventTime')?.value === time;
+                const cls        = !isFree ? 'disabled' : (isSelected ? 'selected' : '');
+
+                return `
+                    <div class="time-slot ${cls}"
+                         onclick="${isFree ? `selectTime('${time}')` : ''}">
+                        ${time}
+                        ${!isFree ? '<span style="font-size:0.65rem;display:block;color:#ef4444">ocupado</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectTime(time) {
+            document.getElementById('eventTime').value = time;
+            renderTimeSlots(); // Atualiza visual
+        }
+
+        function formatDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('eventModal').classList.add('active');
+            document.getElementById('eventForm').reset();
+            document.getElementById('eventDate').value = formatDate(selectedDate);
+            document.getElementById('modalTitle').textContent = 'Novo Agendamento';
+            editingEventId = null;
+            renderTimeSlots();
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').classList.remove('active');
+            editingEventId = null;
+        }
+
+        async function saveEvent(e) {
+            e.preventDefault();
+
+            const data = {
+                userId: currentUser?._id,
+                title: document.getElementById('eventTitle').value,
+                date: document.getElementById('eventDate').value,
+                time: document.getElementById('eventTime').value,
+                description: document.getElementById('eventDescription').value
+            };
+
+            try {
+                if (editingEventId) {
+                    await updateAppointment(editingEventId, data);
+                    showNotification('Agendamento atualizado com sucesso! ✅');
+                } else {
+                    await createAppointment(data);
+                    showNotification('Agendamento criado com sucesso! ✅');
+                }
+
+                closeModal();
+                renderCalendar();
+                renderEventsList();
+                renderTimeSlots();
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        function editEvent(id) {
+            const userId = currentUser?._id;
+            const userAppointments = appointments[userId] || [];
+            const event = userAppointments.find(apt => apt.id === id);
+            
+            if (!event) return;
+
+            document.getElementById('eventId').value = event.id;
+            document.getElementById('eventTitle').value = event.title;
+            document.getElementById('eventDate').value = event.date;
+            document.getElementById('eventTime').value = event.time;
+            document.getElementById('eventDescription').value = event.description || '';
+            
+            document.getElementById('modalTitle').textContent = 'Editar Agendamento';
+            document.getElementById('eventModal').classList.add('active');
+            editingEventId = id;
+            renderTimeSlots();
+        }
+
+        async function deleteEvent(id) {
+            if (!confirm('Tem certeza que deseja excluir este agendamento?')) return;
+
+            try {
+                await deleteAppointment(id, currentUser?._id);
+                showNotification('Agendamento excluído com sucesso! 🗑️');
+                renderCalendar();
+                renderEventsList();
+                renderTimeSlots();
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('eventModal').addEventListener('click', (e) => {
+            if (e.target.id === 'eventModal') closeModal();
+        });
+
+        // Expor funções da API globalmente para testes
+        window.AgendaAPI = {
+            checkAvailability,
+            createAppointment,
+            updateAppointment,
+            deleteAppointment
+        };
+    </script>
+</body>
+</html>
+
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script>
+    const socket = io('http://localhost:3000');
+    socket.on('refreshData', async () => {
+        if (currentUser) {
+            await loadAppointments(currentUser._id);
+            renderCalendar();
+            renderEventsList();
+            renderTimeSlots();
+            showNotification('Dados atualizados em tempo real ✨', 'success');
+        }
+    });
+</script>
