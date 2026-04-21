@@ -979,7 +979,7 @@
 
                 if (currentUser) {
                     updateWorkScheduleTag();
-                    await loadAppointments(currentUser._id);
+                    await loadUserAppointments();
                     renderCalendar();
                     renderEventsList();
                     renderTimeSlots();
