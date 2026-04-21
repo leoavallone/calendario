@@ -264,8 +264,8 @@
         }
 
         .calendar-day.other-month {
-            color: var(--text-light);
-            background: var(--secondary);
+            opacity: 0;
+            pointer-events: none;
         }
 
         .events-list {
@@ -760,6 +760,7 @@
                     <select id="userSelect" onchange="changeUser()">
                         <option value="">Carregando...</option>
                     </select>
+                    <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px;" onclick="openSettingsModal()" title="Configurações de Expediente">⚙️</button>
                 </div>
                 <div id="workScheduleTag" class="work-schedule-tag" style="display:none"></div>
             </div>
@@ -802,9 +803,11 @@
             <div class="sidebar">
                 <div class="card">
                     <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 5px;">
-                        <div class="card-title">
-                            <span>📋</span>
-                            Agendamentos do Dia
+                        <div class="card-title" style="display: flex; justify-content: space-between; width: 100%;">
+                            <span><span>📋</span> Agendamentos do Dia</span>
+                            <button id="toggleDayBtn" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.75rem; transform: none;" onclick="toggleDayWorkStatus()">
+                                Bloquear Dia
+                            </button>
                         </div>
                         <div class="date-subtitle" id="selectedDateDisplay">Hoje</div>
                     </div>
@@ -864,6 +867,47 @@
         </div>
     </div>
 
+    <!-- Modal Settings -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Horário de Funcionamento</h2>
+                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <form id="settingsForm" onsubmit="saveSettings(event)">
+                <div class="form-group">
+                    <label>Dias Padrões de Operação</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.9rem; padding: 10px; background: var(--secondary); border-radius: 10px; border: 1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_monday"> Segunda</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_tuesday"> Terça</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_wednesday"> Quarta</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_thursday"> Quinta</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_friday"> Sexta</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_saturday"> Sábado</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_sunday"> Domingo</label>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label for="workStart">Hora de Início</label>
+                        <input type="time" id="workStart" required step="300">
+                    </div>
+                    <div class="form-group">
+                        <label for="workEnd">Hora de Término</label>
+                        <input type="time" id="workEnd" required step="300">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="workInterval">Tempo de cada agendamento (minutos)</label>
+                    <input type="number" id="workInterval" required min="5" step="5">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Salvar Horários da Semana</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="notification" id="notification"></div>
 
     <script>
@@ -881,19 +925,46 @@
         let appointments = {};
 
         // ─── Inicialização ─────────────────────────────────────────────────────────
+        const token = localStorage.getItem('roqia_token');
+        const localUserJSON = localStorage.getItem('roqia_user');
+        if (!token || !localUserJSON) {
+            window.location.href = '/login';
+        }
+
+        const localUser = JSON.parse(localUserJSON || '{}');
+        const authHeaders = { 'Authorization': `Bearer ${token}` };
+        const jsonHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+        function logout() {
+            localStorage.removeItem('roqia_token');
+            localStorage.removeItem('roqia_user');
+            window.location.href = '/login';
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
+            if (localUser.role !== 'owner') {
+                const navLinks = document.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    if (link.href.includes('finance.html')) link.style.display = 'none';
+                });
+            }
             await loadUsers();
         });
 
         // ─── Carrega usuários da API ───────────────────────────────────────────────
         async function loadUsers() {
             try {
-                const res = await fetch('/api/users');
+                const res = await fetch('/api/users', { headers: authHeaders });
                 if (!res.ok) throw new Error('Falha ao buscar usuários');
                 usersData = await res.json();
 
                 const select = document.getElementById('userSelect');
                 select.innerHTML = '';
+                
+                if (localUser.role === 'barber') {
+                    usersData = usersData.filter(u => u._id === localUser._id);
+                    select.disabled = true;
+                }
 
                 usersData.forEach((user, idx) => {
                     const opt = document.createElement('option');
@@ -930,8 +1001,75 @@
         // Retorna true se a data (objeto Date) é dia de trabalho do usuário
         function isWorkDay(date) {
             if (!currentUser) return true;
+            const dateStr = formatDate(date);
+
+            if (currentUser.blockedDates && currentUser.blockedDates.includes(dateStr)) return false;
+            if (currentUser.extraWorkDates && currentUser.extraWorkDates.includes(dateStr)) return true;
+
             const key = DAY_KEYS[date.getDay()];
             return currentUser.workDays[key] === true;
+        }
+
+        async function toggleDayWorkStatus() {
+            if (!currentUser) return;
+            const dateStr = formatDate(selectedDate);
+            
+            let blockedDates = currentUser.blockedDates || [];
+            let extraWorkDates = currentUser.extraWorkDates || [];
+
+            if (isWorkDay(selectedDate)) {
+                if (extraWorkDates.includes(dateStr)) {
+                    extraWorkDates = extraWorkDates.filter(d => d !== dateStr);
+                } else {
+                    if (!blockedDates.includes(dateStr)) blockedDates.push(dateStr);
+                }
+            } else {
+                if (blockedDates.includes(dateStr)) {
+                    blockedDates = blockedDates.filter(d => d !== dateStr);
+                } else {
+                    if (!extraWorkDates.includes(dateStr)) extraWorkDates.push(dateStr);
+                }
+            }
+
+            try {
+                const res = await fetch(`/api/users/${currentUser._id}/work-days`, {
+                    method: 'PUT',
+                    headers: jsonHeaders,
+                    body: JSON.stringify({ blockedDates, extraWorkDates })
+                });
+                if (!res.ok) throw new Error();
+                const updatedUser = await res.json();
+                
+                currentUser.blockedDates = updatedUser.blockedDates;
+                currentUser.extraWorkDates = updatedUser.extraWorkDates;
+                
+                renderCalendar();
+                renderEventsList();
+                renderTimeSlots();
+                updateSelectedDateDisplay();
+                
+                // Show small success animation
+                const btn = document.getElementById('toggleDayBtn');
+                const orig = btn.innerText;
+                btn.innerText = 'Atualizado ✔';
+                setTimeout(() => btn.innerText = orig, 2000);
+            } catch(e) {
+                showNotification('Erro ao atualizar status do dia', 'error');
+            }
+        }
+
+        function updateToggleBtn() {
+            const btn = document.getElementById('toggleDayBtn');
+            if (!btn) return;
+            if (isWorkDay(selectedDate)) {
+                 btn.textContent = "Bloquear Dia";
+                 btn.classList.replace('btn-primary', 'btn-secondary');
+                 if(!btn.classList.contains('btn-secondary')) btn.classList.add('btn-secondary');
+            } else {
+                 btn.textContent = "Desbloquear Dia";
+                 btn.classList.replace('btn-secondary', 'btn-primary');
+                 if(!btn.classList.contains('btn-primary')) btn.classList.add('btn-primary');
+            }
         }
 
         // Gera lista de horários com base em workSchedule + interval
@@ -958,7 +1096,7 @@
         async function checkAvailability(userId, date) {
             try {
                 const res = await fetch(
-                    `/api/availability?userId=${userId}&date=${date}`
+                    `/api/availability?userId=${userId}&date=${date}`, { headers: authHeaders }
                 );
                 if (!res.ok) throw new Error('Falha na API de disponibilidade');
                 const data = await res.json();
@@ -999,7 +1137,7 @@
             try {
                 const res = await fetch('/api/appointments', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: jsonHeaders,
                     body: JSON.stringify(data)
                 });
                 
@@ -1041,7 +1179,7 @@
                 const checkTime = time || userAppointments[index].time;
                 const availability = await checkAvailability(userId, checkDate);
                 
-                if (!availability.available.includes(checkTime)) {
+                if (!availability.freeSlots.includes(checkTime)) {
                     throw new Error('Novo horário indisponível');
                 }
             }
@@ -1049,7 +1187,7 @@
             try {
                 const res = await fetch(`/api/appointments/${id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: jsonHeaders,
                     body: JSON.stringify(data)
                 });
                 
@@ -1080,8 +1218,11 @@
                 throw new Error('Agendamento não encontrado');
             }
             try {
-                const res = await fetch(`/api/appointments/${id}?userId=${userId}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('Erro ao deletar na API');
+                const res = await fetch(`/api/appointments/${id}?userId=${currentUser._id}`, {
+                    method: 'DELETE',
+                    headers: authHeaders
+                });
+                if (!res.ok) {throw new Error('Erro ao deletar na API');}
                 
                 const deleted = userAppointments.splice(index, 1)[0];
                 return { success: true, data: deleted, message: 'Agendamento removido com sucesso' };
@@ -1107,7 +1248,7 @@
             currentUser = usersData.find(u => u._id === id) || null;
             updateWorkScheduleTag();
             if (currentUser) {
-                await loadAppointments(currentUser._id);
+                await loadUserAppointments();
             }
             renderCalendar();
             renderEventsList();
@@ -1115,14 +1256,15 @@
             if (currentUser) showNotification(`Usuário alterado para ${currentUser.name}`);
         }
 
-        async function loadAppointments(userId) {
+        async function loadUserAppointments() {
+            if (!currentUser) return;
             try {
-                const res = await fetch(`/api/appointments?userId=${userId}`);
+                const res = await fetch(`/api/appointments?userId=${currentUser._id}`, { headers: authHeaders });
                 if (!res.ok) throw new Error('Erro ao carregar agendamentos');
                 const data = await res.json();
                 
                 // Formato id compatível com frontend atual (mapeando _id para id)
-                appointments[userId] = data.map(apt => ({
+                appointments[currentUser._id] = data.map(apt => ({
                     ...apt,
                     id: apt._id
                 }));
@@ -1192,7 +1334,7 @@
             if (isSelected)   div.classList.add('selected');
             if (isNonWork)    div.classList.add('non-workday');
 
-            if (!isOtherMonth && !isNonWork) {
+            if (!isOtherMonth) {
                 div.onclick = () => selectDate(day, dateStr);
             }
 
@@ -1201,7 +1343,6 @@
 
         function selectDate(day, dateStr) {
             const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-            if (!isWorkDay(d)) return; // bloqueia clique em dias não trabalhados
             selectedDate = d;
             renderCalendar();
             renderEventsList();
@@ -1213,6 +1354,7 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('selectedDateDisplay').textContent = 
                 selectedDate.toLocaleDateString('pt-BR', options);
+            updateToggleBtn();
         }
 
         async function renderEventsList() {
@@ -1363,6 +1505,64 @@
             document.getElementById('eventModal').classList.add('active');
             editingEventId = id;
             renderTimeSlots();
+        }
+
+        function openSettingsModal() {
+            if (!currentUser) return;
+            document.getElementById('settingsModal').classList.add('active');
+            ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(day => {
+                 document.getElementById('workDay_' + day).checked = currentUser.workDays && currentUser.workDays[day] === true;
+            });
+            document.getElementById('workStart').value = (currentUser.workSchedule && currentUser.workSchedule.start) || '09:00';
+            document.getElementById('workEnd').value = (currentUser.workSchedule && currentUser.workSchedule.end) || '18:00';
+            document.getElementById('workInterval').value = currentUser.interval || 30;
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const payload = {
+                workDays: {
+                    monday: document.getElementById('workDay_monday').checked,
+                    tuesday: document.getElementById('workDay_tuesday').checked,
+                    wednesday: document.getElementById('workDay_wednesday').checked,
+                    thursday: document.getElementById('workDay_thursday').checked,
+                    friday: document.getElementById('workDay_friday').checked,
+                    saturday: document.getElementById('workDay_saturday').checked,
+                    sunday: document.getElementById('workDay_sunday').checked,
+                },
+                workSchedule: {
+                    start: document.getElementById('workStart').value,
+                    end: document.getElementById('workEnd').value
+                },
+                interval: parseInt(document.getElementById('workInterval').value, 10)
+            };
+
+            try {
+                const res = await fetch(`/api/users/${currentUser._id}/work-days`, {
+                    method: 'PUT',
+                    headers: jsonHeaders,
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error();
+                const updatedUser = await res.json();
+                
+                Object.assign(currentUser, updatedUser); // Update local object
+                
+                updateWorkScheduleTag();
+                renderCalendar();
+                renderEventsList();
+                renderTimeSlots();
+                closeSettingsModal();
+                showNotification('Horários atualizados com sucesso!', 'success');
+            } catch (err) {
+                showNotification('Erro ao salvar as configurações', 'error');
+            }
         }
 
         async function deleteEvent(id) {

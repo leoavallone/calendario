@@ -16,5 +16,7 @@ export const createUserSchema = z.object({
     start: z.string(),
     end: z.string(),
   }),
-  interval: z.number(),
+  interval: z.number().optional(),
+  password: z.string().min(4, "Senha deve ter pelo menos 4 caracteres"),
+  role: z.enum(['owner', 'barber']).default('barber')
 });

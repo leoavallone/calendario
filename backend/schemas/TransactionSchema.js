@@ -6,4 +6,5 @@ export const createTransactionSchema = z.object({
   amount: z.number().positive("Valor deve ser positivo"),
   description: z.string().min(2, "Descrição deve ter no mínimo 2 caracteres"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
+  fixedExpenseId: z.string().optional()
 });

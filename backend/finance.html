@@ -114,10 +114,19 @@
         .card-title { font-size: 1.25rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 10px; }
         
         .btn { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-secondary { background: var(--secondary); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); }
         .btn-success { background: var(--success); color: white; }
         .btn-success:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
         .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--border); transition: 0.2s;}
         .btn-danger-outline:hover { background: var(--danger); color: white; border-color: var(--danger);}
+
+        .month-navigation { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .nav-btn { background: var(--white); border: 2px solid var(--border); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.3s; color: var(--primary); }
+        .nav-btn:hover { border-color: var(--primary); background: var(--primary); color: var(--white); }
+        .current-month { font-size: 1.25rem; font-weight: 700; color: var(--text); text-transform: capitalize; }
 
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -200,9 +209,16 @@
                     <select id="userSelect" onchange="changeUser()">
                         <option value="">Carregando...</option>
                     </select>
+                    <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px; margin-left:10px; cursor:pointer;" onclick="logout()" title="Sair do Sistema">🚪</button>
                 </div>
             </div>
         </header>
+
+        <div class="month-navigation">
+            <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+            <div class="current-month" id="currentMonthLabel"></div>
+            <button class="nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
 
         <div class="dashboard-cards">
             <div class="dash-card">
@@ -233,9 +249,14 @@
                 <div class="card-title">
                     <span>📋</span> Histórico de Transações
                 </div>
-                <button class="btn btn-success" onclick="openModal()">
-                    <span>+</span> Nova Transação
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="openFixedCostModal()">
+                        <span>⚙️</span> Custos Fixos
+                    </button>
+                    <button class="btn btn-success" onclick="openModal()">
+                        <span>+</span> Nova Transação
+                    </button>
+                </div>
             </div>
             
             <table>
@@ -291,19 +312,75 @@
         </div>
     </div>
 
+    <!-- Modal Custos Fixos -->
+    <div class="modal" id="fixedCostModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Custos Fixos do Mês</h3>
+                <button class="close-btn" onclick="closeFixedCostModal()">×</button>
+            </div>
+            <form id="fixedCostForm" onsubmit="saveFixedCost(event)">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="fcDesc" placeholder="Ex: Aluguel, Sistema, Empréstimo" required>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="fcAmount" step="0.01" min="0.01" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Dia do Vencimento (1 a 31)</label>
+                    <input type="number" id="fcDay" min="1" max="31" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    Adicionar Custo Fixo
+                </button>
+            </form>
+            <div style="margin-top: 20px;">
+                <h4 style="margin-bottom: 10px; color: var(--text-light); border-bottom: 2px solid var(--border); padding-bottom: 5px;">Meus Custos Recorrentes</h4>
+                <div id="fixedCostList" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let usersData = [];
         let currentUser = null;
+        let currentFinanceDate = new Date();
+
+        const token = localStorage.getItem('roqia_token');
+        const localUserJSON = localStorage.getItem('roqia_user');
+        
+        if (!token || !localUserJSON) {
+            window.location.href = '/login';
+        }
+        
+        const localUser = JSON.parse(localUserJSON || '{}');
+        if (localUser.role !== 'owner') {
+            window.location.href = '/';
+        }
+
+        const authHeaders = { 'Authorization': `Bearer ${token}` };
+        const jsonHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+        function logout() {
+            localStorage.removeItem('roqia_token');
+            localStorage.removeItem('roqia_user');
+            window.location.href = '/login';
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             const today = new Date();
             document.getElementById('tDate').value = today.toISOString().split('T')[0];
+            updateMonthLabel();
             await loadUsers();
         });
 
         async function loadUsers() {
             try {
-                const res = await fetch('/api/users');
+                const res = await fetch('/api/users', { headers: authHeaders });
                 if (!res.ok) throw new Error('Falha ao buscar usuários');
                 usersData = await res.json();
 
@@ -334,11 +411,32 @@
             }
         }
 
+        function changeMonth(delta) {
+            currentFinanceDate.setMonth(currentFinanceDate.getMonth() + delta);
+            updateMonthLabel();
+            loadTransactions();
+        }
+
+        function updateMonthLabel() {
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                               'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            document.getElementById('currentMonthLabel').textContent = `${monthNames[currentFinanceDate.getMonth()]} ${currentFinanceDate.getFullYear()}`;
+        }
+
         async function loadTransactions() {
             if (!currentUser) return;
             try {
-                const res = await fetch(`/api/transactions?userId=${currentUser._id}`);
-                const data = await res.json();
+                const month = currentFinanceDate.getMonth() + 1;
+                const year = currentFinanceDate.getFullYear();
+                const res = await fetch(`/api/transactions?userId=${currentUser._id}&month=${month}&year=${year}`, { headers: authHeaders });
+                let data = await res.json();
+                
+                // Filter by month
+                data = data.filter(t => {
+                   const datePart = t.date.split('-');
+                   return parseInt(datePart[0]) === year && parseInt(datePart[1]) === month;
+                });
+                
                 renderTransactions(data);
             } catch (err) {
                 showNotification('Erro buscar transações', 'error');
@@ -412,7 +510,7 @@
             try {
                 const res = await fetch('/api/transactions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: jsonHeaders,
                     body: JSON.stringify(payload)
                 });
                 
@@ -429,7 +527,7 @@
         async function deleteTransaction(id) {
             if(!confirm('Deseja realmente apagar esta transação?')) return;
             try {
-                const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE', headers: authHeaders });
                 if(!res.ok) throw new Error('Falha ao remover');
                 showNotification('Removido com sucesso!');
                 loadTransactions();
@@ -447,6 +545,68 @@
             document.getElementById('transactionModal').classList.remove('active');
             document.getElementById('transactionForm').reset();
         }
+
+        function openFixedCostModal() {
+            document.getElementById('fixedCostModal').classList.add('active');
+            loadFixedCosts();
+        }
+        function closeFixedCostModal() {
+            document.getElementById('fixedCostModal').classList.remove('active');
+        }
+
+        async function loadFixedCosts() {
+            if (!currentUser) return;
+            const res = await fetch(`/api/fixed-expenses?userId=${currentUser._id}`, { headers: authHeaders });
+            const data = await res.json();
+            const list = document.getElementById('fixedCostList');
+            if(data.length === 0) {
+                 list.innerHTML = '<p style="font-size: 0.85rem; color: var(--text-light);">Nenhum custo fixo registrado.</p>';
+                 return;
+            }
+            list.innerHTML = data.map(fc => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;">
+                    <div><strong>${fc.description}</strong> - ${formatCurrency(fc.amount)}<br><small>Todo dia ${fc.dayOfMonth}</small></div>
+                    <button class="btn btn-danger-outline" style="padding: 5px;" onclick="deleteFixedCost('${fc._id}')">X</button>
+                </div>
+            `).join('');
+        }
+
+        async function saveFixedCost(e) {
+            e.preventDefault();
+            if(!currentUser) return;
+            const payload = {
+                userId: currentUser._id,
+                description: document.getElementById('fcDesc').value,
+                amount: parseFloat(document.getElementById('fcAmount').value),
+                dayOfMonth: parseInt(document.getElementById('fcDay').value, 10)
+            };
+            try {
+                const res = await fetch('/api/fixed-expenses', {
+                    method: 'POST',
+                    headers: jsonHeaders,
+                    body: JSON.stringify(payload)
+                });
+                if(!res.ok) throw new Error('Erro');
+                showNotification('Custo fixo adicionado!');
+                document.getElementById('fixedCostForm').reset();
+                loadFixedCosts();
+                loadTransactions(); 
+            } catch (err) {
+                showNotification('Erro ao salvar', 'error');
+            }
+        }
+
+        async function deleteFixedCost(id) {
+            if(!confirm('Deseja deletar este custo fixo?')) return;
+            try {
+                await fetch(`/api/fixed-expenses/${id}`, { method: 'DELETE', headers: authHeaders });
+                showNotification('Removido!');
+                loadFixedCosts();
+            } catch (err) {
+                showNotification('Erro', 'error');
+            }
+        }
+
         function showNotification(msg, type='success') {
             const el = document.getElementById('notification');
             el.textContent = msg;

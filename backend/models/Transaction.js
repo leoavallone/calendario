@@ -7,6 +7,7 @@ const TransactionSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     description: { type: String, required: true },
     date: { type: String, required: true }, // Format YYYY-MM-DD
+    fixedExpenseId: { type: String, default: null }
   },
   { timestamps: true }
 );
