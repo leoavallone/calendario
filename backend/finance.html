@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Financeiro - RoqIA</title>
+    <script>
+        const tCheck = localStorage.getItem('roqia_token');
+        const uCheckJSON = localStorage.getItem('roqia_user');
+        if (!tCheck || !uCheckJSON) { window.location.href = '/login'; }
+        else {
+            const tempU = JSON.parse(uCheckJSON);
+            if (tempU.role !== 'owner') window.location.href = '/';
+        }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -352,15 +361,7 @@
 
         const token = localStorage.getItem('roqia_token');
         const localUserJSON = localStorage.getItem('roqia_user');
-        
-        if (!token || !localUserJSON) {
-            window.location.href = '/login';
-        }
-        
         const localUser = JSON.parse(localUserJSON || '{}');
-        if (localUser.role !== 'owner') {
-            window.location.href = '/';
-        }
 
         const authHeaders = { 'Authorization': `Bearer ${token}` };
         const jsonHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
