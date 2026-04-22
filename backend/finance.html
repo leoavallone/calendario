@@ -296,6 +296,7 @@
                 <button class="close-btn" onclick="closeModal()">×</button>
             </div>
             <form id="transactionForm" onsubmit="saveTransaction(event)">
+                <input type="hidden" id="tId">
                 <div class="form-group">
                     <label>Tipo</label>
                     <select id="tType" required>
@@ -396,6 +397,15 @@
                     if (idx === 0) currentUser = user;
                 });
 
+                const realLocalUser = usersData.find(u => u._id === localUser._id);
+                if (realLocalUser) {
+                    localStorage.setItem('roqia_user', JSON.stringify(realLocalUser));
+                    if (realLocalUser.role !== 'owner') {
+                        window.location.href = '/';
+                        return;
+                    }
+                }
+
                 if (currentUser) {
                     await loadTransactions();
                 }
@@ -486,6 +496,7 @@
                         <td>${badge}</td>
                         <td style="font-weight: 500;">${formatCurrency(t.amount)}</td>
                         <td>
+                            <button class="btn btn-secondary" style="padding: 5px 10px; margin-right: 5px; color: var(--text);" onclick="editTransaction('${t._id}', '${t.type}', '${t.description.replace(/'/g, "\\'")}', ${t.amount}, '${t.date}')">✏️</button>
                             <button class="btn btn-danger-outline" style="padding: 5px 10px;" onclick="deleteTransaction('${t._id}')">X</button>
                         </td>
                     </tr>
@@ -501,6 +512,7 @@
             e.preventDefault();
             if(!currentUser) return showNotification('Nenhum usuário', 'error');
 
+            const id = document.getElementById('tId').value;
             const payload = {
                 userId: currentUser._id,
                 type: document.getElementById('tType').value,
@@ -510,20 +522,40 @@
             };
 
             try {
-                const res = await fetch('/api/transactions', {
-                    method: 'POST',
-                    headers: jsonHeaders,
-                    body: JSON.stringify(payload)
-                });
+                let res;
+                if (id) {
+                    res = await fetch(`/api/transactions/${id}`, {
+                        method: 'PUT',
+                        headers: jsonHeaders,
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    res = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: jsonHeaders,
+                        body: JSON.stringify(payload)
+                    });
+                }
                 
                 if(!res.ok) throw new Error('Erro ao salvar');
                 
-                showNotification('Transação adicionada! ✅');
+                showNotification(id ? 'Transação atualizada! ✅' : 'Transação adicionada! ✅');
                 closeModal();
                 loadTransactions();
             } catch (err) {
-                showNotification('Erro ao criar', 'error');
+                showNotification('Erro ao salvar', 'error');
             }
+        }
+
+        function editTransaction(id, type, desc, amount, date) {
+            document.getElementById('tId').value = id;
+            document.getElementById('tType').value = type;
+            document.getElementById('tDesc').value = desc;
+            document.getElementById('tAmount').value = amount;
+            document.getElementById('tDate').value = date;
+            
+            document.querySelector('#transactionModal .modal-title').textContent = 'Editar Transação';
+            document.getElementById('transactionModal').classList.add('active');
         }
 
         async function deleteTransaction(id) {
@@ -542,10 +574,18 @@
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
         }
 
-        function openModal() { document.getElementById('transactionModal').classList.add('active'); }
+        function openModal() { 
+            document.getElementById('transactionForm').reset();
+            document.getElementById('tId').value = '';
+            document.querySelector('#transactionModal .modal-title').textContent = 'Nova Transação';
+            const today = new Date();
+            document.getElementById('tDate').value = today.toISOString().split('T')[0];
+            document.getElementById('transactionModal').classList.add('active'); 
+        }
         function closeModal() {
             document.getElementById('transactionModal').classList.remove('active');
             document.getElementById('transactionForm').reset();
+            document.getElementById('tId').value = '';
         }
 
         function openFixedCostModal() {

@@ -370,6 +370,32 @@ app.delete("/api/transactions/:id", verifyToken, async (req, res) => {
   }
 });
 
+app.put(
+  "/api/transactions/:id",
+  verifyToken,
+  validate(createTransactionSchema),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const transaction = await Transaction.findByIdAndUpdate(
+        id,
+        req.body,
+        { new: true }
+      );
+
+      if (!transaction) {
+        return res.status(404).json({ error: "Transação não encontrada" });
+      }
+
+      io.emit("refreshData");
+
+      return res.json(transaction);
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao atualizar transação" });
+    }
+  }
+);
+
 // CUSTOS FIXOS
 app.get("/api/fixed-expenses", verifyToken, async (req, res) => {
   try {
