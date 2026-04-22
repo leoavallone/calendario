@@ -496,8 +496,10 @@
                         <td>${badge}</td>
                         <td style="font-weight: 500;">${formatCurrency(t.amount)}</td>
                         <td>
-                            <button class="btn btn-secondary" style="padding: 5px 10px; margin-right: 5px; color: var(--text);" onclick="editTransaction('${t._id}', '${t.type}', '${t.description.replace(/'/g, "\\'")}', ${t.amount}, '${t.date}')">✏️</button>
-                            <button class="btn btn-danger-outline" style="padding: 5px 10px;" onclick="deleteTransaction('${t._id}')">X</button>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <button class="btn btn-secondary" style="padding: 5px 10px; color: var(--text);" onclick="editTransaction('${t._id}', '${t.type}', '${t.description.replace(/'/g, "\\'")}', ${t.amount}, '${t.date}')">✏️</button>
+                                <button class="btn btn-danger-outline" style="padding: 5px 10px;" onclick="deleteTransaction('${t._id}')">X</button>
+                            </div>
                         </td>
                     </tr>
                 `;
