@@ -80,7 +80,7 @@ app.get("/api/availability", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const appointments = await Appointment.find({ date });
+    const appointments = await Appointment.find({ date, userId });
         console.log(appointments);
     const allSlots = user.workSchedule
       ? generateTimeSlots(user.workSchedule, user.interval)
@@ -122,7 +122,7 @@ app.post(
       const { date, time } = req.body;
 
       // evitar conflito de horário
-      const exists = await Appointment.findOne({ date, time });
+      const exists = await Appointment.findOne({ date, time, userId: req.body.userId });
 
       if (exists) {
         return res.status(400).json({
