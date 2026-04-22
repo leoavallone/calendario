@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda - RoqIA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Agenda - OneFlow</title>
     <script>
         const tokenCheck = localStorage.getItem('roqia_token');
         if (!tokenCheck) {
@@ -18,11 +19,11 @@
         }
 
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --primary-light: #3b82f6;
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --primary-light: #818cf8;
             --secondary: #f8fafc;
-            --accent: #60a5fa;
+            --accent: #8b5cf6;
             --text: #1e293b;
             --text-light: #64748b;
             --white: #ffffff;
@@ -33,7 +34,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             color: var(--text);
             min-height: 100vh;
@@ -752,7 +753,7 @@
             <div class="logo">
                 <div class="logo-icon">📅</div>
                 <div>
-                    <h1>RoqIA</h1>
+                    <h1 style="font-weight: 600; font-size: 1.8rem; margin-bottom: 2px;">OneFlow <span style="font-size: 0.7rem; opacity: 0.7; font-weight: normal; vertical-align: middle;">from RoqIA</span></h1>
                     <p style="opacity: 0.9; font-size: 0.875rem;">Sistema de Agendamentos</p>
                 </div>
             </div>

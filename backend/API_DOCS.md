@@ -1,4 +1,4 @@
-# 🔌 Documentação Oficial RoqIA (Integração n8n e Auth)
+# 🔌 Documentação Oficial OneFlow (from RoqIA)
 
 Esta documentação fornece as instruções completas para que sua barbearia possa conectar o sistema de agendamento (via Web e WhatsApp) usando n8n, Evolution API e similares.
 
@@ -20,7 +20,7 @@ No n8n, você pode ter um nó (Node) que faz o Login uma vez (ou ao iniciar o fl
   ```json
   {
       "token": "eJhdsfsG1...",
-      "user": { "_id": "A40", "name": "Jefferson", "role": "owner", ... }
+      "user": { "_id": "A40", "name": "Henrique", "role": "owner", ... }
   }
   ```
 

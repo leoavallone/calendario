@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro - RoqIA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Cadastro - OneFlow</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
             --secondary: #f8fafc;
-            --text: #1e293b;
+            --text: #0f172a;
             --text-light: #64748b;
             --white: #ffffff;
             --border: #e2e8f0;
             --danger: #ef4444;
         }
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             color: var(--text);
             min-height: 100vh;
@@ -116,7 +117,7 @@
 <body>
     <div class="login-card">
         <div class="logo-icon">✂️</div>
-        <h2>Criar Conta</h2>
+        <h2 style="font-weight: 600; font-size: 1.8rem; margin-bottom: 2px;">OneFlow <span style="font-size: 0.7rem; opacity: 0.7; font-weight: normal; vertical-align: middle;">from RoqIA</span></h2>
         <p>Junte-se ao sistema de gestão</p>
 
         <div id="errorBox" class="error-msg"></div>
@@ -125,7 +126,7 @@
         <form id="registerForm">
             <div class="form-group">
                 <label>Nome Completo</label>
-                <input type="text" id="name" required placeholder="Ex: Jefferson Silva">
+                <input type="text" id="name" required placeholder="Ex: Henrique Silva">
             </div>
             <div class="form-group">
                 <label>Email</label>
