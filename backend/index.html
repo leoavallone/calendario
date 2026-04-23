@@ -1135,7 +1135,7 @@
 
             // Verifica disponibilidade
             const availability = await checkAvailability(userId, date);
-            if (!availability.available.includes(time)) {
+            if (!availability.freeSlots.includes(time)) {
                 throw new Error('Horário indisponível ou já reservado');
             }
 
