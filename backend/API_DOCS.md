@@ -1,4 +1,4 @@
-# 🔌 Documentação Oficial OneFlow (from RoqIA)
+# 🔌 Documentação Oficial OneFlow (BY RoqIA)
 
 Esta documentação fornece as instruções completas para que sua barbearia possa conectar o sistema de agendamento (via Web e WhatsApp) usando n8n, Evolution API e similares.
 
