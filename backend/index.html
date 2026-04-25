@@ -411,6 +411,54 @@
             font-weight: 700;
         }
 
+        .settings-days-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            font-size: 0.9rem;
+            padding: 10px;
+            background: var(--secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .settings-day-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            margin-bottom: 0;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .form-group .settings-day-option input[type="checkbox"] {
+            flex: 0 0 auto;
+            width: 20px;
+            height: 20px;
+            margin: 0;
+            padding: 0;
+            accent-color: var(--primary);
+        }
+
+        .settings-time-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+
+        .settings-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
         .close-btn {
             background: none;
             border: none;
@@ -745,6 +793,63 @@
                 flex-wrap: wrap;
                 gap: 10px;
             }
+
+            .modal {
+                align-items: flex-start;
+                padding: 20px 12px;
+                overflow-y: auto;
+            }
+
+            .modal-content {
+                width: 100%;
+                max-width: 420px;
+                max-height: none;
+                padding: 24px 20px;
+                border-radius: 18px;
+            }
+
+            .modal-header {
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .modal-title {
+                font-size: 1.75rem;
+                line-height: 1.15;
+                max-width: calc(100% - 52px);
+            }
+
+            .settings-days-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px 10px;
+            }
+
+            .settings-day-option {
+                white-space: normal;
+                font-size: 0.9rem;
+            }
+
+            .settings-time-grid {
+                gap: 12px;
+            }
+
+            .settings-actions .btn {
+                min-height: 48px;
+                text-align: center;
+                white-space: normal;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .modal-content {
+                padding: 22px 16px;
+            }
+
+            .settings-days-grid,
+            .settings-time-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -885,17 +990,17 @@
             <form id="settingsForm" onsubmit="saveSettings(event)">
                 <div class="form-group">
                     <label>Dias Padrões de Operação</label>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.9rem; padding: 10px; background: var(--secondary); border-radius: 10px; border: 1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_monday"> Segunda</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_tuesday"> Terça</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_wednesday"> Quarta</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_thursday"> Quinta</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_friday"> Sexta</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_saturday"> Sábado</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin-bottom:0;"><input type="checkbox" id="workDay_sunday"> Domingo</label>
+                    <div class="settings-days-grid">
+                        <label class="settings-day-option"><input type="checkbox" id="workDay_monday"> Segunda</label>
+                        <label class="settings-day-option"><input type="checkbox" id="workDay_tuesday"> Terça</label>
+                        <label class="settings-day-option"><input type="checkbox" id="workDay_wednesday"> Quarta</label>
+                        <label class="settings-day-option"><input type="checkbox" id="workDay_thursday"> Quinta</label>
+                        <label class="settings-day-option"><input type="checkbox" id="workDay_friday"> Sexta</label>
+                        <label class="settings-day-option"><input type="checkbox" id="workDay_saturday"> Sábado</label>
+                        <label class="settings-day-option"><input type="checkbox" id="workDay_sunday"> Domingo</label>
                     </div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="settings-time-grid">
                     <div class="form-group">
                         <label for="workStart">Hora de Início</label>
                         <input type="time" id="workStart" required step="300">
@@ -909,8 +1014,8 @@
                     <label for="workInterval">Tempo de cada agendamento (minutos)</label>
                     <input type="number" id="workInterval" required min="5" step="5">
                 </div>
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
-                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Salvar Horários da Semana</button>
+                <div class="settings-actions">
+                    <button type="submit" class="btn btn-primary">Salvar Horários da Semana</button>
                 </div>
             </form>
         </div>
