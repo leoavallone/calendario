@@ -443,8 +443,13 @@
 
         .settings-time-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 15px;
+        }
+
+        .settings-time-grid .form-group,
+        .settings-time-grid input {
+            min-width: 0;
         }
 
         .settings-actions {
@@ -831,6 +836,7 @@
             }
 
             .settings-time-grid {
+                grid-template-columns: 1fr;
                 gap: 12px;
             }
 
@@ -846,8 +852,7 @@
                 padding: 22px 16px;
             }
 
-            .settings-days-grid,
-            .settings-time-grid {
+            .settings-days-grid {
                 grid-template-columns: 1fr;
             }
         }
