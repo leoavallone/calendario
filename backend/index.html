@@ -1125,9 +1125,27 @@
         function updateWorkScheduleTag() {
             if (!currentUser) return;
             const tag = document.getElementById('workScheduleTag');
-            const { start, end } = currentUser.workSchedule;
+            const { start, end } = currentUser.workSchedule || { start: '09:00', end: '18:00' };
             tag.textContent = `⏱ ${start} – ${end} | intervalo ${currentUser.interval} min`;
             tag.style.display = 'inline-block';
+        }
+
+        async function refreshCurrentUser() {
+            if (!currentUser) return;
+
+            const res = await fetch('/api/users', { headers: authHeaders });
+            if (!res.ok) throw new Error('Falha ao atualizar usuário');
+
+            const freshUsers = await res.json();
+            usersData = localUser.role === 'barber'
+                ? freshUsers.filter(u => u._id === localUser._id)
+                : freshUsers;
+
+            const freshCurrentUser = usersData.find(u => u._id === currentUser._id);
+            if (freshCurrentUser) {
+                currentUser = freshCurrentUser;
+                updateWorkScheduleTag();
+            }
         }
 
         // Retorna true se a data (objeto Date) é dia de trabalho do usuário
@@ -1685,6 +1703,8 @@
                 const updatedUser = await res.json();
                 
                 Object.assign(currentUser, updatedUser); // Update local object
+                const userIndex = usersData.findIndex(user => user._id === updatedUser._id);
+                if (userIndex >= 0) usersData[userIndex] = currentUser;
                 
                 updateWorkScheduleTag();
                 renderCalendar();
@@ -1732,6 +1752,7 @@
     const socket = io();
     socket.on('refreshData', async () => {
         if (currentUser) {
+            await refreshCurrentUser();
             await loadAppointments(currentUser._id);
             renderCalendar();
             renderEventsList();

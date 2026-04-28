@@ -54,13 +54,35 @@ io.on('connection', (socket) => {
 });
 const PORT = process.env.PORT || 3000;
 
+const DAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const timeToMinutes = (time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+const isWorkDayForUser = (user, date) => {
+  if (!date) return true;
+  if (user.blockedDates?.includes(date)) return false;
+  if (user.extraWorkDates?.includes(date)) return true;
+
+  const [year, month, day] = date.split("-").map(Number);
+  const dateObj = new Date(year, month - 1, day);
+  const key = DAY_KEYS[dateObj.getDay()];
+  return user.workDays?.[key] === true;
+};
+
 // Gera slots a partir do objeto workSchedule { start: "HH:MM", end: "HH:MM" }
 const generateTimeSlots = (workSchedule, interval = 30) => {
+  if (!workSchedule?.start || !workSchedule?.end) return [];
   const { start, end } = workSchedule;
-  const [startH, startM] = start.split(":").map(Number);
-  const [endH,   endM]   = end.split(":").map(Number);
-  const startMin = startH * 60 + startM;
-  const endMin   = endH   * 60 + endM;
+  if (!TIME_RE.test(start) || !TIME_RE.test(end) || !Number.isFinite(interval) || interval <= 0) return [];
+
+  const startMin = timeToMinutes(start);
+  const endMin = timeToMinutes(end);
+  if (startMin >= endMin) return [];
+
   const slots = [];
   for (let m = startMin; m < endMin; m += interval) {
     const h   = String(Math.floor(m / 60)).padStart(2, "0");
@@ -81,8 +103,7 @@ app.get("/api/availability", verifyToken, async (req, res) => {
     }
 
     const appointments = await Appointment.find({ date, userId });
-        console.log(appointments);
-    const allSlots = user.workSchedule
+    const allSlots = user.workSchedule && isWorkDayForUser(user, date)
       ? generateTimeSlots(user.workSchedule, user.interval)
       : [];
     const bookedTimes = appointments.map((a) => a.time);
@@ -274,11 +295,31 @@ app.post("/api/users", validate(createUserSchema), async (req, res) => {
 app.put("/api/users/:id/work-days", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { blockedDates, extraWorkDates } = req.body;
+    const { blockedDates, extraWorkDates, workDays, workSchedule, interval } = req.body;
     
     const update = {};
     if (blockedDates !== undefined) update.blockedDates = blockedDates;
     if (extraWorkDates !== undefined) update.extraWorkDates = extraWorkDates;
+    if (workDays !== undefined) update.workDays = workDays;
+    if (workSchedule !== undefined) {
+      if (!workSchedule?.start || !workSchedule?.end) {
+        return res.status(400).json({ error: "Horário de funcionamento inválido" });
+      }
+      if (!TIME_RE.test(workSchedule.start) || !TIME_RE.test(workSchedule.end)) {
+        return res.status(400).json({ error: "Horário de funcionamento inválido" });
+      }
+      if (timeToMinutes(workSchedule.start) >= timeToMinutes(workSchedule.end)) {
+        return res.status(400).json({ error: "O horário final deve ser maior que o inicial" });
+      }
+      update.workSchedule = workSchedule;
+    }
+    if (interval !== undefined) {
+      const intervalNumber = Number(interval);
+      if (!Number.isFinite(intervalNumber) || intervalNumber <= 0) {
+        return res.status(400).json({ error: "Intervalo inválido" });
+      }
+      update.interval = intervalNumber;
+    }
 
     const user = await User.findByIdAndUpdate(id, update, { new: true });
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
