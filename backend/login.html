@@ -133,6 +133,16 @@
     </div>
 
     <script>
+        const API_BASE_URL = window.API_BASE_URL || (
+            window.location.protocol === 'file:'
+                ? 'https://calendario-jhe0.onrender.com'
+                : window.location.origin
+        );
+
+        function apiFetch(endpoint, options) {
+            return fetch(new URL(endpoint, API_BASE_URL), options);
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -140,7 +150,7 @@
             const errorBox = document.getElementById('errorBox');
 
             try {
-                const res = await fetch('/api/auth/login', {
+                const res = await apiFetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })

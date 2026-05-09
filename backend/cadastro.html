@@ -153,6 +153,16 @@
     </div>
 
     <script>
+        const API_BASE_URL = window.API_BASE_URL || (
+            window.location.protocol === 'file:'
+                ? 'https://calendario-jhe0.onrender.com'
+                : window.location.origin
+        );
+
+        function apiFetch(endpoint, options) {
+            return fetch(new URL(endpoint, API_BASE_URL), options);
+        }
+
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('name').value;
@@ -179,7 +189,7 @@
                     interval: 30
                 };
 
-                const res = await fetch('/api/auth/register', {
+                const res = await apiFetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -194,7 +204,7 @@
                 }
 
                 // Login automatically after register
-                const loginRes = await fetch('/api/auth/login', {
+                const loginRes = await apiFetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })

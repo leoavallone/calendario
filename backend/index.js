@@ -45,6 +45,12 @@ app.get("/login", (req, res) => {
 app.get("/cadastro", (req, res) => {
   res.sendFile(path.join(__dirname, "cadastro.html"));
 });
+app.get("/finance", (req, res) => {
+  res.sendFile(path.join(__dirname, "finance.html"));
+});
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true });
+});
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
@@ -465,6 +471,9 @@ app.delete("/api/fixed-expenses/:id", verifyToken, async (req, res) => {
   } catch (err) { return res.status(500).json({ error: "Erro" }); }
 });
 
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: "Endpoint não encontrado" });
+});
 
 
 server.listen(PORT, () => {

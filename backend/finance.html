@@ -372,6 +372,20 @@
 
         const authHeaders = { 'Authorization': `Bearer ${token}` };
         const jsonHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        const API_BASE_URL = window.API_BASE_URL || (
+            window.location.protocol === 'file:'
+                ? 'https://calendario-jhe0.onrender.com'
+                : window.location.origin
+        );
+
+        async function apiFetch(endpoint, options = {}) {
+            const res = await fetch(new URL(endpoint, API_BASE_URL), options);
+            if (res.status === 401 || res.status === 403) {
+                logout();
+                throw new Error('Sessão expirada');
+            }
+            return res;
+        }
 
         function logout() {
             localStorage.removeItem('roqia_token');
@@ -388,7 +402,7 @@
 
         async function loadUsers() {
             try {
-                const res = await fetch('/api/users', { headers: authHeaders });
+                const res = await apiFetch('/api/users', { headers: authHeaders });
                 if (!res.ok) throw new Error('Falha ao buscar usuários');
                 usersData = await res.json();
 
@@ -445,7 +459,7 @@
             try {
                 const month = currentFinanceDate.getMonth() + 1;
                 const year = currentFinanceDate.getFullYear();
-                const res = await fetch(`/api/transactions?userId=${currentUser._id}&month=${month}&year=${year}`, { headers: authHeaders });
+                const res = await apiFetch(`/api/transactions?userId=${currentUser._id}&month=${month}&year=${year}`, { headers: authHeaders });
                 let data = await res.json();
                 
                 // Filter by month
@@ -531,13 +545,13 @@
             try {
                 let res;
                 if (id) {
-                    res = await fetch(`/api/transactions/${id}`, {
+                    res = await apiFetch(`/api/transactions/${id}`, {
                         method: 'PUT',
                         headers: jsonHeaders,
                         body: JSON.stringify(payload)
                     });
                 } else {
-                    res = await fetch('/api/transactions', {
+                    res = await apiFetch('/api/transactions', {
                         method: 'POST',
                         headers: jsonHeaders,
                         body: JSON.stringify(payload)
@@ -568,7 +582,7 @@
         async function deleteTransaction(id) {
             if(!confirm('Deseja realmente apagar esta transação?')) return;
             try {
-                const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE', headers: authHeaders });
+                const res = await apiFetch(`/api/transactions/${id}`, { method: 'DELETE', headers: authHeaders });
                 if(!res.ok) throw new Error('Falha ao remover');
                 showNotification('Removido com sucesso!');
                 loadTransactions();
@@ -605,7 +619,7 @@
 
         async function loadFixedCosts() {
             if (!currentUser) return;
-            const res = await fetch(`/api/fixed-expenses?userId=${currentUser._id}`, { headers: authHeaders });
+            const res = await apiFetch(`/api/fixed-expenses?userId=${currentUser._id}`, { headers: authHeaders });
             const data = await res.json();
             const list = document.getElementById('fixedCostList');
             if(data.length === 0) {
@@ -630,7 +644,7 @@
                 dayOfMonth: parseInt(document.getElementById('fcDay').value, 10)
             };
             try {
-                const res = await fetch('/api/fixed-expenses', {
+                const res = await apiFetch('/api/fixed-expenses', {
                     method: 'POST',
                     headers: jsonHeaders,
                     body: JSON.stringify(payload)
@@ -648,7 +662,7 @@
         async function deleteFixedCost(id) {
             if(!confirm('Deseja deletar este custo fixo?')) return;
             try {
-                await fetch(`/api/fixed-expenses/${id}`, { method: 'DELETE', headers: authHeaders });
+                await apiFetch(`/api/fixed-expenses/${id}`, { method: 'DELETE', headers: authHeaders });
                 showNotification('Removido!');
                 loadFixedCosts();
             } catch (err) {

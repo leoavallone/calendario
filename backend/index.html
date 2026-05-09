@@ -1066,6 +1066,20 @@
         const localUser = JSON.parse(localUserJSON || '{}');
         const authHeaders = { 'Authorization': `Bearer ${token}` };
         const jsonHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        const API_BASE_URL = window.API_BASE_URL || (
+            window.location.protocol === 'file:'
+                ? 'https://calendario-jhe0.onrender.com'
+                : window.location.origin
+        );
+
+        async function apiFetch(endpoint, options = {}) {
+            const res = await fetch(new URL(endpoint, API_BASE_URL), options);
+            if (res.status === 401 || res.status === 403) {
+                logout();
+                throw new Error('Sessão expirada');
+            }
+            return res;
+        }
 
         function logout() {
             localStorage.removeItem('roqia_token');
@@ -1086,7 +1100,7 @@
         // ─── Carrega usuários da API ───────────────────────────────────────────────
         async function loadUsers() {
             try {
-                const res = await fetch('/api/users', { headers: authHeaders });
+                const res = await apiFetch('/api/users', { headers: authHeaders });
                 if (!res.ok) throw new Error('Falha ao buscar usuários');
                 usersData = await res.json();
 
@@ -1133,7 +1147,7 @@
         async function refreshCurrentUser() {
             if (!currentUser) return;
 
-            const res = await fetch('/api/users', { headers: authHeaders });
+            const res = await apiFetch('/api/users', { headers: authHeaders });
             if (!res.ok) throw new Error('Falha ao atualizar usuário');
 
             const freshUsers = await res.json();
@@ -1182,7 +1196,7 @@
             }
 
             try {
-                const res = await fetch(`/api/users/${currentUser._id}/work-days`, {
+                const res = await apiFetch(`/api/users/${currentUser._id}/work-days`, {
                     method: 'PUT',
                     headers: jsonHeaders,
                     body: JSON.stringify({ blockedDates, extraWorkDates })
@@ -1245,7 +1259,7 @@
         // ─── Verificação de disponibilidade (API real) ────────────────────────────
         async function checkAvailability(userId, date) {
             try {
-                const res = await fetch(
+                const res = await apiFetch(
                     `/api/availability?userId=${userId}&date=${date}`, { headers: authHeaders }
                 );
                 if (!res.ok) throw new Error('Falha na API de disponibilidade');
@@ -1285,7 +1299,7 @@
             }
 
             try {
-                const res = await fetch('/api/appointments', {
+                const res = await apiFetch('/api/appointments', {
                     method: 'POST',
                     headers: jsonHeaders,
                     body: JSON.stringify(data)
@@ -1335,7 +1349,7 @@
             }
 
             try {
-                const res = await fetch(`/api/appointments/${id}`, {
+                const res = await apiFetch(`/api/appointments/${id}`, {
                     method: 'PUT',
                     headers: jsonHeaders,
                     body: JSON.stringify(data)
@@ -1368,7 +1382,7 @@
                 throw new Error('Agendamento não encontrado');
             }
             try {
-                const res = await fetch(`/api/appointments/${id}?userId=${currentUser._id}`, {
+                const res = await apiFetch(`/api/appointments/${id}?userId=${currentUser._id}`, {
                     method: 'DELETE',
                     headers: authHeaders
                 });
@@ -1409,7 +1423,7 @@
         async function loadUserAppointments() {
             if (!currentUser) return;
             try {
-                const res = await fetch(`/api/appointments?userId=${currentUser._id}`, { headers: authHeaders });
+                const res = await apiFetch(`/api/appointments?userId=${currentUser._id}`, { headers: authHeaders });
                 if (!res.ok) throw new Error('Erro ao carregar agendamentos');
                 const data = await res.json();
                 
@@ -1694,7 +1708,7 @@
             };
 
             try {
-                const res = await fetch(`/api/users/${currentUser._id}/work-days`, {
+                const res = await apiFetch(`/api/users/${currentUser._id}/work-days`, {
                     method: 'PUT',
                     headers: jsonHeaders,
                     body: JSON.stringify(payload)
