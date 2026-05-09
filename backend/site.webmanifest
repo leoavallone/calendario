@@ -1,0 +1,20 @@
+{
+  "name": "One Flow",
+  "short_name": "One Flow",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "388x386",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/"
+}
