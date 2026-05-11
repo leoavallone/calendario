@@ -45,6 +45,9 @@ app.get("/login", (req, res) => {
 app.get("/cadastro", (req, res) => {
   res.sendFile(path.join(__dirname, "cadastro.html"));
 });
+app.get("/recuperar-senha", (req, res) => {
+  res.sendFile(path.join(__dirname, "recuperar-senha.html"));
+});
 app.get("/finance", (req, res) => {
   res.sendFile(path.join(__dirname, "finance.html"));
 });
@@ -263,9 +266,32 @@ app.post("/api/auth/register", validate(createUserSchema), async (req, res) => {
   }
 });
 
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const schema = z.object({
+      email: z.string().email(),
+      password: z.string().min(4, "Senha deve ter pelo menos 4 caracteres"),
+    });
+    const { email, password } = schema.parse(req.body);
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+    user.password = await bcrypt.hash(password, 10);
+    await user.save();
+
+    return res.json({ message: "Senha redefinida com sucesso" });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: "Informe um email válido e uma senha com pelo menos 4 caracteres" });
+    }
+    return res.status(500).json({ error: "Erro ao redefinir senha" });
+  }
+});
+
 app.get("/api/users", verifyToken, async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select("-password");
 
     return res.json(users);
   } catch (err) {
@@ -277,20 +303,22 @@ app.get("/api/users", verifyToken, async (req, res) => {
 
 app.post("/api/users", validate(createUserSchema), async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, password } = req.body;
 
     // evitar duplicidade
     const exists = await User.findOne({ email });
-    console.log(req.body);
     if (exists) {
       return res.status(400).json({
         error: "Usuário já existe com esse email",
       });
     }
 
-    const user = await User.create(req.body);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ ...req.body, password: hashedPassword });
+    const userObj = user.toObject();
+    delete userObj.password;
 
-    return res.status(201).json(user);
+    return res.status(201).json(userObj);
   } catch (err) {
     return res.status(500).json({
       error: "Erro ao criar usuário",

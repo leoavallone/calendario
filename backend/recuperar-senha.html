@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#4f46e5">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>Login - OneFlow</title>
+    <title>Recuperar Senha - OneFlow</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -22,6 +22,7 @@
             --white: #ffffff;
             --border: #e2e8f0;
             --danger: #ef4444;
+            --success: #10b981;
         }
         body {
             font-family: 'Inter', system-ui, sans-serif;
@@ -31,6 +32,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         .login-card {
             background: var(--white);
@@ -38,7 +40,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(37, 99, 235, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 430px;
             text-align: center;
         }
         .logo-icon {
@@ -53,10 +55,11 @@
             color: var(--text-light);
             margin-bottom: 30px;
             font-size: 0.9rem;
+            line-height: 1.5;
         }
         .form-group {
             text-align: left;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .form-group label {
             display: block;
@@ -94,46 +97,18 @@
             background: var(--primary-dark);
             transform: translateY(-2px);
         }
-        .error-msg {
-            color: var(--danger);
+        .message {
             font-size: 0.85rem;
             margin-bottom: 15px;
             display: none;
+            line-height: 1.4;
         }
+        .message.error { color: var(--danger); }
+        .message.success { color: var(--success); }
         .footer-link {
             margin-top: 20px;
             font-size: 0.9rem;
             color: var(--text-light);
-        }
-        .login-actions {
-            display: grid;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .btn-secondary {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: var(--secondary);
-            color: var(--primary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-        .btn-secondary:hover {
-            border-color: var(--primary);
-            background: #eef2ff;
-        }
-        .forgot-link {
-            display: inline-block;
-            margin-top: 12px;
-            color: var(--primary);
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-decoration: none;
         }
         .footer-link a {
             color: var(--primary);
@@ -144,32 +119,30 @@
 </head>
 <body>
     <div class="login-card">
-        <div class="logo-icon">📅</div>
-        <h2 style="font-weight: 600; font-size: 1.8rem; margin-bottom: 2px;">OneFlow <span style="display: block; font-size: 0.7rem; opacity: 0.7; font-weight: normal;">BY RoqIA</span></h2>
-        <p>Acesse sua conta para continuar</p>
+        <div class="logo-icon">🔐</div>
+        <h2 style="font-weight: 600; font-size: 1.8rem; margin-bottom: 2px;">Recuperar senha</h2>
+        <p>Informe o e-mail da conta e defina uma nova senha para voltar a acessar o OneFlow.</p>
 
-        <div id="errorBox" class="error-msg"></div>
+        <div id="messageBox" class="message"></div>
 
-        <form id="loginForm">
+        <form id="resetForm">
             <div class="form-group">
-                <label>Email</label>
+                <label for="email">Email</label>
                 <input type="email" id="email" required placeholder="seu@email.com">
             </div>
             <div class="form-group">
-                <label>Senha</label>
-                <input type="password" id="password" required placeholder="••••••••">
+                <label for="password">Nova senha</label>
+                <input type="password" id="password" required minlength="4" placeholder="••••••••">
             </div>
-            <button type="submit" class="btn">Entrar</button>
+            <div class="form-group">
+                <label for="confirmPassword">Confirmar nova senha</label>
+                <input type="password" id="confirmPassword" required minlength="4" placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn">Redefinir senha</button>
         </form>
 
-        <a class="forgot-link" href="/recuperar-senha">Esqueci minha senha</a>
-
-        <div class="login-actions">
-            <a class="btn-secondary" href="/cadastro">Criar nova conta</a>
-        </div>
-
         <div class="footer-link">
-            Não possui conta? <a href="/cadastro">Cadastre-se</a>
+            Lembrou a senha? <a href="/login">Voltar para o login</a>
         </div>
     </div>
 
@@ -184,36 +157,42 @@
             return fetch(new URL(endpoint, API_BASE_URL), options);
         }
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = `message ${type}`;
+            messageBox.style.display = 'block';
+        }
+
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const errorBox = document.getElementById('errorBox');
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showMessage('As senhas não conferem.', 'error');
+                return;
+            }
 
             try {
-                const res = await apiFetch('/api/auth/login', {
+                const res = await apiFetch('/api/auth/reset-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-
                 const data = await res.json();
-                
+
                 if (!res.ok) {
-                    errorBox.textContent = data.error || 'Erro ao conectar';
-                    errorBox.style.display = 'block';
+                    showMessage(data.error || 'Não foi possível redefinir a senha.', 'error');
                     return;
                 }
 
-                // Save auth context
-                localStorage.setItem('roqia_token', data.token);
-                localStorage.setItem('roqia_user', JSON.stringify(data.user));
-                
-                // Redirect to calendar
-                window.location.href = '/';
+                showMessage('Senha redefinida com sucesso. Redirecionando para o login...', 'success');
+                setTimeout(() => window.location.href = '/login', 1400);
             } catch (err) {
-                errorBox.textContent = 'Falha crítica no sistema.';
-                errorBox.style.display = 'block';
+                showMessage('Falha crítica no sistema.', 'error');
             }
         });
     </script>
