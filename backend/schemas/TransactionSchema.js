@@ -4,6 +4,7 @@ export const createTransactionSchema = z.object({
   userId: z.string(),
   type: z.enum(["income", "expense"], { errorMap: () => ({ message: "Tipo deve ser 'income' ou 'expense'" }) }),
   amount: z.number().positive("Valor deve ser positivo"),
+  quantity: z.number().int().positive("Quantidade deve ser positiva").default(1),
   description: z.string().min(2, "Descrição deve ter no mínimo 2 caracteres"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
   fixedExpenseId: z.string().optional()

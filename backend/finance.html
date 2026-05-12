@@ -319,8 +319,12 @@
                     <input type="text" id="tDesc" placeholder="Ex: Corte de Cabelo" required>
                 </div>
                 <div class="form-group">
-                    <label>Valor (R$)</label>
+                    <label>Valor unitário (R$)</label>
                     <input type="number" id="tAmount" step="0.01" min="0.01" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantidade</label>
+                    <input type="number" id="tQuantity" min="1" step="1" value="1" required>
                 </div>
                 <div class="form-group">
                     <label>Data</label>
@@ -504,24 +508,27 @@
             }
 
             tbody.innerHTML = transactions.map(t => {
-                if (t.type === 'income') income += t.amount;
-                if (t.type === 'expense') expense += t.amount;
+                const quantity = Math.max(parseInt(t.quantity || 1, 10), 1);
+                const totalAmount = t.amount * quantity;
+                if (t.type === 'income') income += totalAmount;
+                if (t.type === 'expense') expense += totalAmount;
 
                 const dateSplit = t.date.split('-');
                 const formattedDate = dateSplit.length === 3 ? `${dateSplit[2]}/${dateSplit[1]}/${dateSplit[0]}` : t.date;
                 const badge = t.type === 'income' 
                     ? '<span class="badge badge-income">Receita</span>' 
                     : '<span class="badge badge-expense">Despesa</span>';
+                const quantityText = quantity > 1 ? `<br><small>${quantity} x ${formatCurrency(t.amount)}</small>` : '';
 
                 return `
                     <tr>
                         <td>${formattedDate}</td>
                         <td><strong>${t.description}</strong></td>
                         <td>${badge}</td>
-                        <td style="font-weight: 500;">${formatCurrency(t.amount)}</td>
+                        <td style="font-weight: 500;">${formatCurrency(totalAmount)}${quantityText}</td>
                         <td>
                             <div style="display: flex; gap: 5px; align-items: center;">
-                                <button class="btn btn-secondary" style="padding: 5px 10px; color: var(--text);" onclick="editTransaction('${t._id}', '${t.type}', '${t.description.replace(/'/g, "\\'")}', ${t.amount}, '${t.date}')">✏️</button>
+                                <button class="btn btn-secondary" style="padding: 5px 10px; color: var(--text);" onclick="editTransaction('${t._id}', '${t.type}', '${t.description.replace(/'/g, "\\'")}', ${t.amount}, '${t.date}', ${quantity})">✏️</button>
                                 <button class="btn btn-danger-outline" style="padding: 5px 10px;" onclick="deleteTransaction('${t._id}')">X</button>
                             </div>
                         </td>
@@ -544,6 +551,7 @@
                 type: document.getElementById('tType').value,
                 description: document.getElementById('tDesc').value,
                 amount: parseFloat(document.getElementById('tAmount').value),
+                quantity: parseInt(document.getElementById('tQuantity').value, 10),
                 date: document.getElementById('tDate').value
             };
 
@@ -573,11 +581,12 @@
             }
         }
 
-        function editTransaction(id, type, desc, amount, date) {
+        function editTransaction(id, type, desc, amount, date, quantity = 1) {
             document.getElementById('tId').value = id;
             document.getElementById('tType').value = type;
             document.getElementById('tDesc').value = desc;
             document.getElementById('tAmount').value = amount;
+            document.getElementById('tQuantity').value = quantity;
             document.getElementById('tDate').value = date;
             
             document.querySelector('#transactionModal .modal-title').textContent = 'Editar Transação';
@@ -606,6 +615,7 @@
             document.querySelector('#transactionModal .modal-title').textContent = 'Nova Transação';
             const today = new Date();
             document.getElementById('tDate').value = today.toISOString().split('T')[0];
+            document.getElementById('tQuantity').value = 1;
             document.getElementById('transactionModal').classList.add('active'); 
         }
         function closeModal() {
