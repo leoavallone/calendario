@@ -149,7 +149,7 @@
             display: grid;
             grid-template-columns: 1fr 350px;
             gap: 25px;
-            align-items: stretch;
+            align-items: start;
         }
 
         @media (max-width: 968px) {
@@ -800,13 +800,11 @@
         .sidebar {
             display: grid;
             gap: 20px;
-            align-self: stretch;
-            grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+            align-self: start;
         }
 
         .sidebar-schedule-card {
             min-height: 0;
-            height: 100%;
         }
 
         .agenda-person-card {
@@ -861,11 +859,17 @@
         }
 
         .agenda-person-name {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr auto;
             align-items: center;
-            justify-content: space-between;
             gap: 8px;
             font-weight: 700;
+        }
+
+        .agenda-count {
+            min-width: 18px;
+            text-align: center;
+            justify-self: center;
         }
 
         .agenda-person-meta {
@@ -1105,10 +1109,6 @@
 
             .sidebar-schedule-card {
                 height: auto;
-            }
-
-            .sidebar {
-                grid-template-rows: none;
             }
 
             .card-header {
@@ -1587,7 +1587,7 @@
                             <span>
                                 <span class="agenda-person-name">
                                     ${user.name}
-                                    <span>${count}</span>
+                                    <span class="agenda-count">${count}</span>
                                 </span>
                                 <span class="agenda-person-meta">${getScheduleSummary(user)} · ${user.interval || 30} min</span>
                             </span>
