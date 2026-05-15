@@ -7,7 +7,7 @@ import {
   createAppointmentSchema,
   updateAppointmentSchema,
 } from "../schemas/AppointmentSchema.js";
-import { generateTimeSlots, isWorkDayForUser } from "../utils/schedule.js";
+import { generateTimeSlots, isSlotBlockedForUser, isWorkDayForUser } from "../utils/schedule.js";
 
 export const createAppointmentRouter = (io) => {
   const router = express.Router();
@@ -24,9 +24,12 @@ export const createAppointmentRouter = (io) => {
         ? generateTimeSlots(user.workSchedule, user.interval)
         : [];
       const bookedTimes = appointments.map((a) => a.time);
-      const freeSlots = allSlots.filter((t) => !bookedTimes.includes(t));
+      const blockedTimes = (user.blockedSlots || [])
+        .filter((slot) => slot.date === date)
+        .map((slot) => slot.time);
+      const freeSlots = allSlots.filter((t) => !bookedTimes.includes(t) && !blockedTimes.includes(t));
 
-      return res.json({ date, allSlots, bookedTimes, freeSlots });
+      return res.json({ date, allSlots, bookedTimes, blockedTimes, freeSlots });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ error: "Erro ao buscar disponibilidade" });
@@ -52,6 +55,12 @@ export const createAppointmentRouter = (io) => {
     async (req, res) => {
       try {
         const { date, time } = req.body;
+        const user = await User.findById(req.body.userId);
+        if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+        if (isSlotBlockedForUser(user, date, time)) {
+          return res.status(400).json({ error: "Horário está bloqueado" });
+        }
+
         const exists = await Appointment.findOne({ date, time, userId: req.body.userId });
 
         if (exists) return res.status(400).json({ error: "Horário já está ocupado" });
@@ -74,9 +83,33 @@ export const createAppointmentRouter = (io) => {
     async (req, res) => {
       try {
         const { id } = req.params;
-        const appointment = await Appointment.findByIdAndUpdate(id, req.body, { new: true });
+        const currentAppointment = await Appointment.findById(id);
+        if (!currentAppointment) return res.status(404).json({ error: "Agendamento não encontrado" });
 
-        if (!appointment) return res.status(404).json({ error: "Agendamento não encontrado" });
+        const nextUserId = req.body.userId || currentAppointment.userId;
+        const nextDate = req.body.date || currentAppointment.date;
+        const nextTime = req.body.time || currentAppointment.time;
+        const user = await User.findById(nextUserId);
+        if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+        const changedSlot = String(nextUserId) !== String(currentAppointment.userId) ||
+          nextDate !== currentAppointment.date ||
+          nextTime !== currentAppointment.time;
+        if (changedSlot) {
+          if (isSlotBlockedForUser(user, nextDate, nextTime)) {
+            return res.status(400).json({ error: "Horário está bloqueado" });
+          }
+
+          const exists = await Appointment.findOne({
+            _id: { $ne: id },
+            userId: nextUserId,
+            date: nextDate,
+            time: nextTime,
+          });
+          if (exists) return res.status(400).json({ error: "Horário já está ocupado" });
+        }
+
+        const appointment = await Appointment.findByIdAndUpdate(id, req.body, { new: true });
 
         io.emit("refreshData");
         return res.json(appointment);

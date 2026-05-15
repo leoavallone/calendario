@@ -43,11 +43,28 @@ export const createUserRouter = (io) => {
   router.put("/users/:id/work-days", verifyToken, async (req, res) => {
     try {
       const { id } = req.params;
-      const { blockedDates, extraWorkDates, workDays, workSchedule, interval } = req.body;
+      const { blockedDates, extraWorkDates, blockedSlots, workDays, workSchedule, interval } = req.body;
 
       const update = {};
       if (blockedDates !== undefined) update.blockedDates = blockedDates;
       if (extraWorkDates !== undefined) update.extraWorkDates = extraWorkDates;
+      if (blockedSlots !== undefined) {
+        if (!Array.isArray(blockedSlots)) {
+          return res.status(400).json({ error: "Horários bloqueados inválidos" });
+        }
+
+        const invalidSlot = blockedSlots.some((slot) => (
+          !slot?.date ||
+          !slot?.time ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(slot.date) ||
+          !TIME_RE.test(slot.time)
+        ));
+        if (invalidSlot) {
+          return res.status(400).json({ error: "Horários bloqueados inválidos" });
+        }
+
+        update.blockedSlots = blockedSlots;
+      }
       if (workDays !== undefined) update.workDays = workDays;
       if (workSchedule !== undefined) {
         if (!workSchedule?.start || !workSchedule?.end) {

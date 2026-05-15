@@ -8,6 +8,13 @@ const UserSchema = new mongoose.Schema({
   interval: Number,
   blockedDates: { type: [String], default: [] },
   extraWorkDates: { type: [String], default: [] },
+  blockedSlots: {
+    type: [{
+      date: String,
+      time: String,
+    }],
+    default: [],
+  },
   password: { type: String, required: false },
   role: { type: String, enum: ['owner', 'barber'], default: 'barber' }
 });

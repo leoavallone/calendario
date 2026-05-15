@@ -26,6 +26,11 @@ export const isWorkDayForUser = (user, date) => {
   return user.workDays?.[key] === true;
 };
 
+export const isSlotBlockedForUser = (user, date, time) => {
+  if (!date || !time) return false;
+  return user.blockedSlots?.some((slot) => slot.date === date && slot.time === time) === true;
+};
+
 export const generateTimeSlots = (workSchedule, interval = 30) => {
   if (!workSchedule?.start || !workSchedule?.end) return [];
 

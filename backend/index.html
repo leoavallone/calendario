@@ -28,22 +28,47 @@
             --primary: #4f46e5;
             --primary-dark: #3730a3;
             --primary-light: #818cf8;
+            --primary-soft: #eef2ff;
             --secondary: #f8fafc;
             --accent: #8b5cf6;
             --text: #1e293b;
             --text-light: #64748b;
             --white: #ffffff;
             --border: #e2e8f0;
+            --surface: #ffffff;
+            --surface-raised: #ffffff;
+            --surface-soft: #f8fafc;
+            --body-bg: linear-gradient(135deg, #f8fbff 0%, #e8f6ff 100%);
+            --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
         }
 
+        [data-theme="dark"] {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --primary-light: #a5b4fc;
+            --primary-soft: rgba(129, 140, 248, 0.14);
+            --secondary: #111827;
+            --accent: #c084fc;
+            --text: #e5e7eb;
+            --text-light: #9ca3af;
+            --white: #0f172a;
+            --border: #273449;
+            --surface: #111827;
+            --surface-raised: #172033;
+            --surface-soft: #0f172a;
+            --body-bg: linear-gradient(135deg, #08111f 0%, #111827 100%);
+            --shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+        }
+
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            background: var(--body-bg);
             color: var(--text);
             min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         .container {
@@ -54,21 +79,26 @@
 
         header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
+            color: #fff;
             padding: 25px;
             border-radius: 16px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.2);
+            box-shadow: var(--shadow);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 130px;
+            gap: 18px;
+            min-height: 130px;
+            height: auto;
+            overflow: hidden;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex: 0 1 330px;
+            min-width: 250px;
         }
 
         .logo-icon {
@@ -87,19 +117,32 @@
             align-items: center;
             gap: 10px;
             background: rgba(255,255,255,0.15);
-            padding: 10px 20px;
+            padding: 10px 14px;
             border-radius: 10px;
             backdrop-filter: blur(10px);
+            max-width: 100%;
         }
 
         .user-selector select {
             background: var(--white);
-            border: none;
+            border: 1px solid rgba(255,255,255,0.35);
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
             cursor: pointer;
             color: var(--text);
+            min-width: 150px;
+            max-width: 210px;
+        }
+
+        .logged-user-chip {
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .grid {
@@ -115,10 +158,10 @@
         }
 
         .card {
-            background: var(--white);
-            border-radius: 16px;
+            background: var(--surface);
+            border-radius: 14px;
             padding: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            box-shadow: var(--shadow);
             border: 1px solid var(--border);
         }
 
@@ -155,7 +198,7 @@
 
         .btn-primary {
             background: var(--primary);
-            color: var(--white);
+            color: #fff;
         }
 
         .btn-primary:hover {
@@ -176,7 +219,7 @@
 
         .btn-danger {
             background: var(--danger);
-            color: var(--white);
+            color: #fff;
         }
 
         .btn-danger:hover {
@@ -205,6 +248,8 @@
             font-size: 14px;
             transition: all 0.3s;
             font-family: inherit;
+            background: var(--surface-raised);
+            color: var(--text);
         }
 
         .form-group input:focus,
@@ -246,7 +291,7 @@
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
-            background: var(--white);
+            background: var(--surface-raised);
             font-weight: 600;
         }
 
@@ -258,7 +303,7 @@
 
         .calendar-day.selected {
             background: var(--primary);
-            color: var(--white);
+            color: #fff;
             border-color: var(--primary);
         }
 
@@ -273,7 +318,7 @@
         }
 
         .calendar-day.selected.has-events::after {
-            background: var(--white);
+            background: #fff;
         }
 
         .calendar-day.other-month {
@@ -287,7 +332,7 @@
         }
 
         .event-item {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: var(--surface-soft);
             border-left: 4px solid var(--primary);
             padding: 15px;
             border-radius: 10px;
@@ -381,7 +426,7 @@
         }
 
         .modal-content {
-            background: var(--white);
+            background: var(--surface);
             border-radius: 20px;
             padding: 30px;
             width: 90%;
@@ -460,7 +505,7 @@
         .settings-time-grid input[type="time"] {
             appearance: none;
             -webkit-appearance: none;
-            background: var(--white);
+            background: var(--surface-raised);
             display: block;
             max-width: 100%;
             text-align: left;
@@ -606,7 +651,7 @@
         }
 
         .nav-btn {
-            background: var(--white);
+            background: var(--surface-raised);
             border: 2px solid var(--border);
             width: 40px;
             height: 40px;
@@ -623,7 +668,7 @@
         .nav-btn:hover {
             border-color: var(--primary);
             background: var(--primary);
-            color: var(--white);
+            color: #fff;
         }
 
         .current-month {
@@ -669,6 +714,8 @@
             cursor: pointer;
             font-size: 0.875rem;
             transition: all 0.3s;
+            background: var(--surface-raised);
+            position: relative;
         }
 
         .time-slot:hover {
@@ -688,18 +735,145 @@
             background: var(--secondary);
         }
 
+        .time-slot.blocked {
+            opacity: 1;
+            border-color: rgba(245, 158, 11, 0.65);
+            color: var(--warning);
+            background: rgba(245, 158, 11, 0.08);
+        }
+
+        .time-slot.booked {
+            border-color: rgba(239, 68, 68, 0.45);
+            color: var(--danger);
+        }
+
         .calendar-day.non-workday {
             opacity: 0.35;
             cursor: not-allowed;
-            background: #f1f5f9;
-            border-color: #e2e8f0;
+            background: var(--surface-soft);
+            border-color: var(--border);
             color: var(--text-light);
         }
 
         .calendar-day.non-workday:hover {
             transform: none;
             box-shadow: none;
-            border-color: #e2e8f0;
+            border-color: var(--border);
+        }
+
+        .agenda-switcher {
+            display: grid;
+            gap: 10px;
+        }
+
+        .agenda-person-card {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--surface-raised);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .agenda-person-card:hover,
+        .agenda-person-card.active {
+            border-color: var(--primary);
+            box-shadow: 0 10px 24px rgba(79, 70, 229, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .agenda-person-card.active {
+            background: var(--primary-soft);
+        }
+
+        .agenda-person-name {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-weight: 700;
+        }
+
+        .agenda-person-meta {
+            display: block;
+            margin-top: 5px;
+            color: var(--text-light);
+            font-size: 0.78rem;
+        }
+
+        .slot-actions {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            display: grid;
+            gap: 10px;
+        }
+
+        .slot-actions-title {
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .slot-actions-text {
+            color: var(--text-light);
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .theme-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            padding: 6px;
+            border-radius: 12px;
+        }
+
+        .theme-option {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-light);
+            font-weight: 700;
+        }
+
+        .theme-option.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .settings-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .settings-summary-item {
+            border: 1px solid var(--border);
+            background: var(--surface-soft);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .settings-summary-label {
+            display: block;
+            color: var(--text-light);
+            font-size: 0.72rem;
+            margin-bottom: 3px;
+        }
+
+        .settings-summary-value {
+            color: var(--text);
+            font-weight: 800;
+            font-size: 0.9rem;
         }
 
         .user-info-badge {
@@ -730,11 +904,13 @@
 
         .navbar {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             background: rgba(255,255,255,0.15);
             padding: 6px 12px;
             border-radius: 12px;
             backdrop-filter: blur(10px);
+            flex: 0 1 auto;
+            min-width: 0;
         }
 
         .header-right {
@@ -742,6 +918,9 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 8px;
+            flex: 0 1 470px;
+            min-width: 300px;
+            max-width: 470px;
         }
 
         .date-subtitle {
@@ -752,20 +931,42 @@
         }
 
         .nav-link {
-            color: var(--white);
+            color: #fff;
             text-decoration: none;
             font-weight: 600;
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: 8px;
             transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
 
         .nav-link:hover, .nav-link.active {
             background: rgba(255,255,255,0.25);
             transform: scale(1.05);
+        }
+
+        @media (max-width: 1320px) {
+            header {
+                flex-wrap: wrap;
+            }
+
+            .logo {
+                flex: 1 1 280px;
+            }
+
+            .navbar {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .header-right {
+                flex: 1 1 360px;
+                max-width: none;
+            }
         }
 
         @media (max-width: 640px) {
@@ -802,6 +1003,16 @@
             .user-selector {
                 width: 100%;
                 justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .user-selector select {
+                max-width: 100%;
+                flex: 1 1 160px;
+            }
+
+            .logged-user-chip {
+                max-width: 100%;
             }
 
             .card {
@@ -855,6 +1066,10 @@
                 gap: 12px;
             }
 
+            .settings-summary {
+                grid-template-columns: 1fr;
+            }
+
             .settings-time-grid input[type="time"] {
                 width: 100%;
                 min-height: 48px;
@@ -897,6 +1112,7 @@
             <div class="header-right">
                 <div class="user-selector">
                     <span>👤</span>
+                    <span class="logged-user-chip" id="loggedUserName">Carregando...</span>
                     <select id="userSelect" onchange="changeUser()">
                         <option value="">Carregando...</option>
                     </select>
@@ -942,6 +1158,16 @@
             </div>
 
             <div class="sidebar">
+                <div class="card" id="teamAgendaCard" style="display:none; margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>👥</span>
+                            Agendas da Equipe
+                        </div>
+                    </div>
+                    <div class="agenda-switcher" id="teamAgendaList"></div>
+                </div>
+
                 <div class="card">
                     <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 5px;">
                         <div class="card-title" style="display: flex; justify-content: space-between; width: 100%;">
@@ -969,6 +1195,13 @@
                     </div>
                     <div class="time-slots" id="timeSlots">
                         <!-- Preenchido via JS -->
+                    </div>
+                    <div class="slot-actions" id="slotActions" style="display:none;">
+                        <div>
+                            <div class="slot-actions-title" id="slotActionTitle">Horário selecionado</div>
+                            <div class="slot-actions-text" id="slotActionText">Escolha um horário para bloquear ou liberar.</div>
+                        </div>
+                        <button class="btn btn-secondary" id="toggleSlotBtn" onclick="toggleSelectedSlotBlock()">Bloquear Horário</button>
                     </div>
                 </div>
             </div>
@@ -1016,6 +1249,27 @@
                 <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
             </div>
             <form id="settingsForm" onsubmit="saveSettings(event)">
+                <div class="settings-summary">
+                    <div class="settings-summary-item">
+                        <span class="settings-summary-label">Expediente</span>
+                        <span class="settings-summary-value" id="settingsHoursSummary">--</span>
+                    </div>
+                    <div class="settings-summary-item">
+                        <span class="settings-summary-label">Intervalo</span>
+                        <span class="settings-summary-value" id="settingsIntervalSummary">--</span>
+                    </div>
+                    <div class="settings-summary-item">
+                        <span class="settings-summary-label">Tema</span>
+                        <span class="settings-summary-value" id="settingsThemeSummary">--</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tema da Plataforma</label>
+                    <div class="theme-toggle">
+                        <button type="button" class="theme-option" id="themeLightBtn" onclick="setTheme('light')">Claro</button>
+                        <button type="button" class="theme-option" id="themeDarkBtn" onclick="setTheme('dark')">Escuro</button>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>Dias Padrões de Operação</label>
                     <div class="settings-days-grid">
@@ -1058,6 +1312,8 @@
         let currentUser = null;      // objeto usuário completo da API
         let editingEventId = null;
         let usersData = [];          // lista de usuários da API
+        let selectedSlot = null;
+        let currentTheme = localStorage.getItem('oneflow_theme') || 'light';
 
         // Mapeamento: índice JS (0=Dom) → chave workDays
         const DAY_KEYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -1077,6 +1333,8 @@
                 ? 'https://calendario-jhe0.onrender.com'
                 : window.location.origin
         );
+
+        applyTheme(currentTheme);
 
         async function apiFetch(endpoint, options = {}) {
             const res = await fetch(new URL(endpoint, API_BASE_URL), options);
@@ -1127,12 +1385,15 @@
                 });
 
                 if (currentUser) {
+                    select.value = currentUser._id;
                     updateWorkScheduleTag();
-                    await loadUserAppointments();
+                    renderTeamAgendaList();
+                    await loadVisibleAppointments();
                     renderCalendar();
                     renderEventsList();
                     renderTimeSlots();
                     updateSelectedDateDisplay();
+                    renderTeamAgendaList();
                 }
             } catch (err) {
                 console.error(err);
@@ -1148,6 +1409,78 @@
             const { start, end } = currentUser.workSchedule || { start: '09:00', end: '18:00' };
             tag.textContent = `⏱ ${start} – ${end} | intervalo ${currentUser.interval} min`;
             tag.style.display = 'inline-block';
+            updateAccountContext();
+        }
+
+        function updateAccountContext() {
+            const loggedUserName = document.getElementById('loggedUserName');
+            if (!loggedUserName) return;
+
+            const loggedName = localUser.name || localUser.email || 'Conta logada';
+            loggedUserName.textContent = loggedName;
+            loggedUserName.title = `Logado como ${loggedName}`;
+        }
+
+        function applyTheme(theme) {
+            currentTheme = theme === 'dark' ? 'dark' : 'light';
+            document.documentElement.dataset.theme = currentTheme;
+            localStorage.setItem('oneflow_theme', currentTheme);
+        }
+
+        function setTheme(theme) {
+            applyTheme(theme);
+            updateThemeControls();
+            updateSettingsSummary();
+        }
+
+        function updateThemeControls() {
+            document.getElementById('themeLightBtn')?.classList.toggle('active', currentTheme === 'light');
+            document.getElementById('themeDarkBtn')?.classList.toggle('active', currentTheme === 'dark');
+        }
+
+        function updateSettingsSummary() {
+            if (!currentUser) return;
+            const { start, end } = currentUser.workSchedule || { start: '09:00', end: '18:00' };
+            const themeLabel = currentTheme === 'dark' ? 'Escuro' : 'Claro';
+            const hours = document.getElementById('settingsHoursSummary');
+            const interval = document.getElementById('settingsIntervalSummary');
+            const theme = document.getElementById('settingsThemeSummary');
+            if (hours) hours.textContent = `${start} - ${end}`;
+            if (interval) interval.textContent = `${currentUser.interval || 30} min`;
+            if (theme) theme.textContent = themeLabel;
+        }
+
+        function getUserDayAppointmentsCount(userId) {
+            const dateStr = formatDate(selectedDate);
+            return (appointments[userId] || []).filter(apt => apt.date === dateStr).length;
+        }
+
+        function renderTeamAgendaList() {
+            const card = document.getElementById('teamAgendaCard');
+            const list = document.getElementById('teamAgendaList');
+            if (!card || !list) return;
+
+            if (localUser.role !== 'owner' || usersData.length <= 1) {
+                card.style.display = 'none';
+                list.innerHTML = '';
+                return;
+            }
+
+            card.style.display = 'block';
+            list.innerHTML = usersData.map(user => {
+                const active = currentUser?._id === user._id ? 'active' : '';
+                const { start, end } = user.workSchedule || { start: '09:00', end: '18:00' };
+                const count = getUserDayAppointmentsCount(user._id);
+                return `
+                    <button class="agenda-person-card ${active}" onclick="selectUserById('${user._id}')">
+                        <span class="agenda-person-name">
+                            ${user.name}
+                            <span>${count}</span>
+                        </span>
+                        <span class="agenda-person-meta">${start} - ${end} · ${user.interval || 30} min</span>
+                    </button>
+                `;
+            }).join('');
         }
 
         async function refreshCurrentUser() {
@@ -1165,6 +1498,7 @@
             if (freshCurrentUser) {
                 currentUser = freshCurrentUser;
                 updateWorkScheduleTag();
+                renderTeamAgendaList();
             }
         }
 
@@ -1183,6 +1517,7 @@
         async function toggleDayWorkStatus() {
             if (!currentUser) return;
             const dateStr = formatDate(selectedDate);
+            selectedSlot = null;
             
             let blockedDates = currentUser.blockedDates || [];
             let extraWorkDates = currentUser.extraWorkDates || [];
@@ -1217,6 +1552,7 @@
                 renderEventsList();
                 renderTimeSlots();
                 updateSelectedDateDisplay();
+                renderTeamAgendaList();
                 
                 // Show small success animation
                 const btn = document.getElementById('toggleDayBtn');
@@ -1275,6 +1611,7 @@
                     allSlots:    data.allSlots    || [],
                     freeSlots:   data.freeSlots   || [],
                     bookedTimes: data.bookedTimes || [],
+                    blockedTimes: data.blockedTimes || [],
                     date,
                     userId
                 };
@@ -1282,7 +1619,8 @@
                 // fallback local se API cair
                 console.warn('Usando fallback local para slots:', err);
                 const slots = generateTimeSlots();
-                return { allSlots: slots, freeSlots: slots, bookedTimes: [], date, userId };
+                const blockedTimes = getBlockedTimesForDate(date);
+                return { allSlots: slots, freeSlots: slots.filter(time => !blockedTimes.includes(time)), bookedTimes: [], blockedTimes, date, userId };
             }
         }
 
@@ -1415,7 +1753,14 @@
 
         async function changeUser() {
             const id = document.getElementById('userSelect').value;
+            await selectUserById(id);
+        }
+
+        async function selectUserById(id) {
             currentUser = usersData.find(u => u._id === id) || null;
+            selectedSlot = null;
+            const select = document.getElementById('userSelect');
+            if (select && currentUser) select.value = currentUser._id;
             updateWorkScheduleTag();
             if (currentUser) {
                 await loadUserAppointments();
@@ -1423,6 +1768,7 @@
             renderCalendar();
             renderEventsList();
             renderTimeSlots();
+            renderTeamAgendaList();
             if (currentUser) showNotification(`Usuário alterado para ${currentUser.name}`);
         }
 
@@ -1438,6 +1784,25 @@
                     ...apt,
                     id: apt._id
                 }));
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function loadVisibleAppointments() {
+            if (localUser.role === 'owner') {
+                await Promise.all(usersData.map(user => loadUserAppointmentsById(user._id)));
+                return;
+            }
+            await loadUserAppointments();
+        }
+
+        async function loadUserAppointmentsById(userId) {
+            try {
+                const res = await apiFetch(`/api/appointments?userId=${userId}`, { headers: authHeaders });
+                if (!res.ok) throw new Error('Erro ao carregar agendamentos');
+                const data = await res.json();
+                appointments[userId] = data.map(apt => ({ ...apt, id: apt._id }));
             } catch(e) {
                 console.error(e);
             }
@@ -1514,10 +1879,12 @@
         function selectDate(day, dateStr) {
             const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             selectedDate = d;
+            selectedSlot = null;
             renderCalendar();
             renderEventsList();
             renderTimeSlots();
             updateSelectedDateDisplay();
+            renderTeamAgendaList();
         }
 
         function updateSelectedDateDisplay() {
@@ -1577,41 +1944,120 @@
             // Dia não útil: limpa slots
             if (!isWorkDay(selectedDate)) {
                 container.innerHTML = '';
+                updateSlotActions([], [], []);
                 return;
             }
 
             const dateStr = formatDate(selectedDate);
             const userId  = currentUser?._id;
             const availability = await checkAvailability(userId, dateStr);
-            const { allSlots, freeSlots } = availability;
+            const { allSlots, freeSlots, bookedTimes, blockedTimes } = availability;
 
             if (allSlots.length === 0) {
                 container.innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;">Nenhum horário configurado</p>';
+                updateSlotActions([], [], []);
                 return;
             }
 
             container.innerHTML = allSlots.map(time => {
+                const isBooked   = bookedTimes.includes(time);
+                const isBlocked  = blockedTimes.includes(time);
                 const isFree     = freeSlots.includes(time);
                 const isSelected = document.getElementById('eventTime')?.value === time;
-                const cls        = !isFree ? 'disabled' : (isSelected ? 'selected' : '');
+                const cls        = [
+                    isBooked ? 'disabled booked' : '',
+                    isBlocked ? 'blocked' : '',
+                    isSelected || selectedSlot === time ? 'selected' : ''
+                ].filter(Boolean).join(' ');
+                const label = isBooked ? 'ocupado' : (isBlocked ? 'bloqueado' : '');
 
                 return `
                     <div class="time-slot ${cls}"
-                         onclick="${isFree ? `selectTime('${time}')` : ''}">
+                         onclick="${!isBooked ? `selectTime('${time}', ${isFree})` : ''}">
                         ${time}
-                        ${!isFree ? '<span style="font-size:0.65rem;display:block;color:#ef4444">ocupado</span>' : ''}
+                        ${label ? `<span style="font-size:0.65rem;display:block;">${label}</span>` : ''}
                     </div>
                 `;
             }).join('');
+            updateSlotActions(allSlots, bookedTimes, blockedTimes);
         }
 
-        function selectTime(time) {
-            document.getElementById('eventTime').value = time;
+        function selectTime(time, canSchedule = true) {
+            selectedSlot = time;
+            if (canSchedule) {
+                document.getElementById('eventTime').value = time;
+            }
             renderTimeSlots(); // Atualiza visual
+        }
+
+        function getBlockedTimesForDate(dateStr) {
+            return (currentUser?.blockedSlots || [])
+                .filter(slot => slot.date === dateStr)
+                .map(slot => slot.time);
+        }
+
+        function updateSlotActions(allSlots = [], bookedTimes = [], blockedTimes = []) {
+            const wrapper = document.getElementById('slotActions');
+            const title = document.getElementById('slotActionTitle');
+            const text = document.getElementById('slotActionText');
+            const btn = document.getElementById('toggleSlotBtn');
+            if (!wrapper || !title || !text || !btn) return;
+
+            if (!selectedSlot || !allSlots.includes(selectedSlot)) {
+                wrapper.style.display = allSlots.length ? 'grid' : 'none';
+                title.textContent = 'Bloqueio por horário';
+                text.textContent = 'Clique em um horário livre para bloquear ou em um bloqueado para liberar.';
+                btn.style.display = 'none';
+                return;
+            }
+
+            const isBooked = bookedTimes.includes(selectedSlot);
+            const isBlocked = blockedTimes.includes(selectedSlot);
+            wrapper.style.display = 'grid';
+            title.textContent = `${selectedSlot} em ${formatDateForDisplay(selectedDate)}`;
+            text.textContent = isBooked
+                ? 'Horário ocupado por agendamento. Exclua ou edite o agendamento para liberar.'
+                : (isBlocked ? 'Este horário está bloqueado manualmente.' : 'Este horário está livre para agendamento.');
+            btn.style.display = isBooked ? 'none' : 'inline-flex';
+            btn.textContent = isBlocked ? 'Desbloquear Horário' : 'Bloquear Horário';
+            btn.classList.toggle('btn-primary', isBlocked);
+            btn.classList.toggle('btn-secondary', !isBlocked);
+        }
+
+        async function toggleSelectedSlotBlock() {
+            if (!currentUser || !selectedSlot) return;
+
+            const dateStr = formatDate(selectedDate);
+            const slots = currentUser.blockedSlots || [];
+            const exists = slots.some(slot => slot.date === dateStr && slot.time === selectedSlot);
+            const blockedSlots = exists
+                ? slots.filter(slot => !(slot.date === dateStr && slot.time === selectedSlot))
+                : [...slots, { date: dateStr, time: selectedSlot }];
+
+            try {
+                const res = await apiFetch(`/api/users/${currentUser._id}/work-days`, {
+                    method: 'PUT',
+                    headers: jsonHeaders,
+                    body: JSON.stringify({ blockedSlots })
+                });
+                if (!res.ok) throw new Error();
+                const updatedUser = await res.json();
+                Object.assign(currentUser, updatedUser);
+                const userIndex = usersData.findIndex(user => user._id === updatedUser._id);
+                if (userIndex >= 0) usersData[userIndex] = currentUser;
+                renderTimeSlots();
+                showNotification(exists ? 'Horário desbloqueado com sucesso!' : 'Horário bloqueado com sucesso!', 'success');
+            } catch (err) {
+                showNotification('Erro ao atualizar o horário', 'error');
+            }
         }
 
         function formatDate(date) {
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatDateForDisplay(date) {
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         }
 
         // Modal functions
@@ -1619,6 +2065,9 @@
             document.getElementById('eventModal').classList.add('active');
             document.getElementById('eventForm').reset();
             document.getElementById('eventDate').value = formatDate(selectedDate);
+            if (selectedSlot && !getBlockedTimesForDate(formatDate(selectedDate)).includes(selectedSlot)) {
+                document.getElementById('eventTime').value = selectedSlot;
+            }
             document.getElementById('modalTitle').textContent = 'Novo Agendamento';
             editingEventId = null;
             renderTimeSlots();
@@ -1686,6 +2135,8 @@
             document.getElementById('workStart').value = (currentUser.workSchedule && currentUser.workSchedule.start) || '09:00';
             document.getElementById('workEnd').value = (currentUser.workSchedule && currentUser.workSchedule.end) || '18:00';
             document.getElementById('workInterval').value = currentUser.interval || 30;
+            updateThemeControls();
+            updateSettingsSummary();
         }
 
         function closeSettingsModal() {
@@ -1730,6 +2181,8 @@
                 renderCalendar();
                 renderEventsList();
                 renderTimeSlots();
+                renderTeamAgendaList();
+                updateSettingsSummary();
                 closeSettingsModal();
                 showNotification('Horários atualizados com sucesso!', 'success');
             } catch (err) {
@@ -1773,10 +2226,11 @@
     socket.on('refreshData', async () => {
         if (currentUser) {
             await refreshCurrentUser();
-            await loadAppointments(currentUser._id);
+            await loadVisibleAppointments();
             renderCalendar();
             renderEventsList();
             renderTimeSlots();
+            renderTeamAgendaList();
             showNotification('Dados atualizados em tempo real ✨', 'success');
         }
     });
