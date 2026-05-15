@@ -506,6 +506,7 @@
         .day-schedule-row input[type="time"] {
             width: 100%;
             min-width: 0;
+            max-width: 100%;
             padding: 10px;
         }
 
@@ -1085,15 +1086,17 @@
 
             header {
                 flex-direction: column;
-                gap: 15px;
+                gap: 12px;
                 text-align: center;
                 height: auto;
-                padding: 20px 15px;
+                min-height: 0;
+                padding: 18px 14px;
             }
 
             .navbar {
                 width: 100%;
                 justify-content: center;
+                order: 3;
             }
 
             .header-right {
@@ -1105,6 +1108,7 @@
                 width: 100%;
                 justify-content: center;
                 flex-wrap: wrap;
+                padding: 8px 10px;
             }
 
             .user-selector select {
@@ -1114,6 +1118,33 @@
 
             .logged-user-chip {
                 max-width: 100%;
+            }
+
+            .logo {
+                min-width: 0;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .logo-icon {
+                width: 46px;
+                height: 46px;
+                font-size: 24px;
+            }
+
+            .logo h1 {
+                font-size: 1.55rem !important;
+            }
+
+            .logo p {
+                font-size: 0.8rem !important;
+            }
+
+            .work-schedule-tag {
+                font-size: 0.72rem;
+                max-width: 100%;
+                white-space: normal;
+                text-align: center;
             }
 
             .card {
@@ -1157,7 +1188,9 @@
             }
 
             .day-schedule-row {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 8px;
+                padding: 10px;
             }
 
             .day-schedule-row .settings-day-option {
@@ -1176,7 +1209,9 @@
             .day-schedule-row input[type="time"] {
                 width: 100%;
                 min-height: 48px;
-                padding: 12px;
+                padding: 10px 8px;
+                font-size: 0.95rem;
+                box-sizing: border-box;
             }
 
             .settings-actions .btn {
