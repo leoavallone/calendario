@@ -1122,14 +1122,17 @@
 
             .logo {
                 min-width: 0;
-                flex-direction: column;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
                 gap: 10px;
             }
 
             .logo-icon {
-                width: 46px;
-                height: 46px;
-                font-size: 24px;
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+                border-radius: 8px;
             }
 
             .logo h1 {
@@ -1189,12 +1192,13 @@
 
             .day-schedule-row {
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                gap: 8px;
-                padding: 10px;
+                gap: 6px;
+                padding: 8px;
             }
 
             .day-schedule-row .settings-day-option {
                 grid-column: 1 / -1;
+                margin-bottom: 2px;
             }
 
             .settings-day-option {
@@ -1208,10 +1212,12 @@
 
             .day-schedule-row input[type="time"] {
                 width: 100%;
-                min-height: 48px;
-                padding: 10px 8px;
-                font-size: 0.95rem;
+                min-width: 0;
+                min-height: 44px;
+                padding: 8px 4px;
+                font-size: 0.85rem;
                 box-sizing: border-box;
+                text-align: center;
             }
 
             .settings-actions .btn {
@@ -1221,14 +1227,15 @@
             }
         }
 
-        @media (max-width: 380px) {
+        @media (max-width: 400px) {
             .modal-content {
-                width: calc(100vw - 24px);
-                padding: 20px 14px;
+                width: calc(100vw - 20px);
+                padding: 20px 12px;
             }
 
             .day-schedule-row {
                 grid-template-columns: 1fr;
+                gap: 8px;
             }
         }
     </style>
