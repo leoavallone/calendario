@@ -1193,13 +1193,14 @@
             }
 
             .day-schedule-row {
-                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                gap: 6px;
-                padding: 8px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 10px;
             }
 
             .day-schedule-row .settings-day-option {
-                grid-column: 1 / -1;
+                flex: 1 1 100%;
                 margin-bottom: 2px;
             }
 
@@ -1213,7 +1214,8 @@
             }
 
             .day-schedule-row input[type="time"] {
-                width: 100%;
+                flex: 1 1 calc(50% - 4px);
+                width: auto;
                 min-width: 0;
                 min-height: 44px;
                 padding: 8px 4px;
@@ -1233,11 +1235,6 @@
             .modal-content {
                 width: calc(100vw - 20px);
                 padding: 20px 12px;
-            }
-
-            .day-schedule-row {
-                grid-template-columns: 1fr;
-                gap: 8px;
             }
         }
     </style>
