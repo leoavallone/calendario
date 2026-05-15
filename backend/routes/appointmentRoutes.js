@@ -7,7 +7,7 @@ import {
   createAppointmentSchema,
   updateAppointmentSchema,
 } from "../schemas/AppointmentSchema.js";
-import { generateTimeSlots, isSlotBlockedForUser, isWorkDayForUser } from "../utils/schedule.js";
+import { generateTimeSlots, getWorkScheduleForDate, isSlotBlockedForUser, isWorkDayForUser } from "../utils/schedule.js";
 
 export const createAppointmentRouter = (io) => {
   const router = express.Router();
@@ -20,8 +20,9 @@ export const createAppointmentRouter = (io) => {
       if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
       const appointments = await Appointment.find({ date, userId });
-      const allSlots = user.workSchedule && isWorkDayForUser(user, date)
-        ? generateTimeSlots(user.workSchedule, user.interval)
+      const workSchedule = getWorkScheduleForDate(user, date);
+      const allSlots = workSchedule && isWorkDayForUser(user, date)
+        ? generateTimeSlots(workSchedule, user.interval)
         : [];
       const bookedTimes = appointments.map((a) => a.time);
       const blockedTimes = (user.blockedSlots || [])

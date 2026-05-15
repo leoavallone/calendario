@@ -472,6 +472,28 @@
             border: 1px solid var(--border);
         }
 
+        .day-schedule-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .day-schedule-row {
+            display: grid;
+            grid-template-columns: minmax(96px, 1fr) minmax(92px, 110px) minmax(92px, 110px);
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface-soft);
+        }
+
+        .day-schedule-row input[type="time"] {
+            width: 100%;
+            min-width: 0;
+            padding: 10px;
+        }
+
         .settings-day-option {
             display: flex;
             align-items: center;
@@ -1113,9 +1135,12 @@
                 max-width: calc(100% - 52px);
             }
 
-            .settings-days-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 12px 10px;
+            .day-schedule-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .day-schedule-row .settings-day-option {
+                grid-column: 1 / -1;
             }
 
             .settings-day-option {
@@ -1123,16 +1148,11 @@
                 font-size: 0.9rem;
             }
 
-            .settings-time-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
             .settings-summary {
                 grid-template-columns: 1fr;
             }
 
-            .settings-time-grid input[type="time"] {
+            .day-schedule-row input[type="time"] {
                 width: 100%;
                 min-height: 48px;
                 padding: 12px;
@@ -1151,7 +1171,7 @@
                 padding: 20px 14px;
             }
 
-            .settings-days-grid {
+            .day-schedule-row {
                 grid-template-columns: 1fr;
             }
         }
@@ -1329,25 +1349,43 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Dias Padrões de Operação</label>
-                    <div class="settings-days-grid">
-                        <label class="settings-day-option"><input type="checkbox" id="workDay_monday"> Segunda</label>
-                        <label class="settings-day-option"><input type="checkbox" id="workDay_tuesday"> Terça</label>
-                        <label class="settings-day-option"><input type="checkbox" id="workDay_wednesday"> Quarta</label>
-                        <label class="settings-day-option"><input type="checkbox" id="workDay_thursday"> Quinta</label>
-                        <label class="settings-day-option"><input type="checkbox" id="workDay_friday"> Sexta</label>
-                        <label class="settings-day-option"><input type="checkbox" id="workDay_saturday"> Sábado</label>
-                        <label class="settings-day-option"><input type="checkbox" id="workDay_sunday"> Domingo</label>
-                    </div>
-                </div>
-                <div class="settings-time-grid">
-                    <div class="form-group">
-                        <label for="workStart">Hora de Início</label>
-                        <input type="time" id="workStart" required step="300">
-                    </div>
-                    <div class="form-group">
-                        <label for="workEnd">Hora de Término</label>
-                        <input type="time" id="workEnd" required step="300">
+                    <label>Dias e horários de operação</label>
+                    <div class="day-schedule-grid">
+                        <div class="day-schedule-row">
+                            <label class="settings-day-option"><input type="checkbox" id="workDay_monday"> Segunda</label>
+                            <input type="time" id="workStart_monday" required step="300" aria-label="Início segunda">
+                            <input type="time" id="workEnd_monday" required step="300" aria-label="Término segunda">
+                        </div>
+                        <div class="day-schedule-row">
+                            <label class="settings-day-option"><input type="checkbox" id="workDay_tuesday"> Terça</label>
+                            <input type="time" id="workStart_tuesday" required step="300" aria-label="Início terça">
+                            <input type="time" id="workEnd_tuesday" required step="300" aria-label="Término terça">
+                        </div>
+                        <div class="day-schedule-row">
+                            <label class="settings-day-option"><input type="checkbox" id="workDay_wednesday"> Quarta</label>
+                            <input type="time" id="workStart_wednesday" required step="300" aria-label="Início quarta">
+                            <input type="time" id="workEnd_wednesday" required step="300" aria-label="Término quarta">
+                        </div>
+                        <div class="day-schedule-row">
+                            <label class="settings-day-option"><input type="checkbox" id="workDay_thursday"> Quinta</label>
+                            <input type="time" id="workStart_thursday" required step="300" aria-label="Início quinta">
+                            <input type="time" id="workEnd_thursday" required step="300" aria-label="Término quinta">
+                        </div>
+                        <div class="day-schedule-row">
+                            <label class="settings-day-option"><input type="checkbox" id="workDay_friday"> Sexta</label>
+                            <input type="time" id="workStart_friday" required step="300" aria-label="Início sexta">
+                            <input type="time" id="workEnd_friday" required step="300" aria-label="Término sexta">
+                        </div>
+                        <div class="day-schedule-row">
+                            <label class="settings-day-option"><input type="checkbox" id="workDay_saturday"> Sábado</label>
+                            <input type="time" id="workStart_saturday" required step="300" aria-label="Início sábado">
+                            <input type="time" id="workEnd_saturday" required step="300" aria-label="Término sábado">
+                        </div>
+                        <div class="day-schedule-row">
+                            <label class="settings-day-option"><input type="checkbox" id="workDay_sunday"> Domingo</label>
+                            <input type="time" id="workStart_sunday" required step="300" aria-label="Início domingo">
+                            <input type="time" id="workEnd_sunday" required step="300" aria-label="Término domingo">
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1375,6 +1413,7 @@
 
         // Mapeamento: índice JS (0=Dom) → chave workDays
         const DAY_KEYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+        const SETTINGS_DAY_KEYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
 
         // Agendamentos cacheados (por userId) vindos da API
         let appointments = {};
@@ -1453,8 +1492,7 @@
         function updateWorkScheduleTag() {
             if (!currentUser) return;
             const tag = document.getElementById('workScheduleTag');
-            const { start, end } = currentUser.workSchedule || { start: '09:00', end: '18:00' };
-            tag.textContent = `⏱ ${start} – ${end} | intervalo ${currentUser.interval} min`;
+            tag.textContent = `⏱ ${getScheduleSummary(currentUser)} | intervalo ${currentUser.interval || 30} min`;
             tag.style.display = 'inline-block';
             updateAccountContext();
         }
@@ -1487,11 +1525,32 @@
 
         function updateSettingsSummary() {
             if (!currentUser) return;
-            const { start, end } = currentUser.workSchedule || { start: '09:00', end: '18:00' };
             const hours = document.getElementById('settingsHoursSummary');
             const interval = document.getElementById('settingsIntervalSummary');
-            if (hours) hours.textContent = `${start} - ${end}`;
+            if (hours) hours.textContent = getScheduleSummary(currentUser);
             if (interval) interval.textContent = `${currentUser.interval || 30} min`;
+        }
+
+        function getScheduleForDay(user, dayKey) {
+            return (user?.workSchedules && user.workSchedules[dayKey]?.start && user.workSchedules[dayKey]?.end)
+                ? user.workSchedules[dayKey]
+                : (user?.workSchedule || { start: '09:00', end: '18:00' });
+        }
+
+        function getScheduleForDate(date) {
+            if (!currentUser) return { start: '09:00', end: '18:00' };
+            return getScheduleForDay(currentUser, DAY_KEYS[date.getDay()]);
+        }
+
+        function getScheduleSummary(user) {
+            if (!user) return '--';
+            const activeSchedules = SETTINGS_DAY_KEYS
+                .filter(day => user.workDays?.[day])
+                .map(day => getScheduleForDay(user, day));
+            if (activeSchedules.length === 0) return 'Sem dias ativos';
+
+            const unique = [...new Set(activeSchedules.map(schedule => `${schedule.start} - ${schedule.end}`))];
+            return unique.length === 1 ? unique[0] : `${unique.length} faixas de horário`;
         }
 
         function getUserDayAppointmentsCount(userId) {
@@ -1513,7 +1572,6 @@
             card.style.display = 'block';
             list.innerHTML = usersData.map(user => {
                 const active = currentUser?._id === user._id ? 'active' : '';
-                const { start, end } = user.workSchedule || { start: '09:00', end: '18:00' };
                 const count = getUserDayAppointmentsCount(user._id);
                 return `
                     <button class="agenda-person-card ${active}" onclick="selectUserById('${user._id}')">
@@ -1523,7 +1581,7 @@
                                     ${user.name}
                                     <span>${count}</span>
                                 </span>
-                                <span class="agenda-person-meta">${start} - ${end} · ${user.interval || 30} min</span>
+                                <span class="agenda-person-meta">${getScheduleSummary(user)} · ${user.interval || 30} min</span>
                             </span>
                             <span class="agenda-settings-btn"
                                   role="button"
@@ -1641,7 +1699,7 @@
         // Gera lista de horários com base em workSchedule + interval
         function generateTimeSlots() {
             if (!currentUser) return [];
-            const { start, end } = currentUser.workSchedule;
+            const { start, end } = getScheduleForDate(selectedDate);
             const interval = currentUser.interval || 30;
 
             const [startH, startM] = start.split(':').map(Number);
@@ -2195,11 +2253,12 @@
             if (!currentUser) return;
             document.getElementById('settingsModal').classList.add('active');
             document.getElementById('settingsModalTitle').textContent = `Horário de Funcionamento - ${currentUser.name}`;
-            ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(day => {
-                 document.getElementById('workDay_' + day).checked = currentUser.workDays && currentUser.workDays[day] === true;
+            SETTINGS_DAY_KEYS.forEach(day => {
+                const schedule = getScheduleForDay(currentUser, day);
+                document.getElementById('workDay_' + day).checked = currentUser.workDays && currentUser.workDays[day] === true;
+                document.getElementById('workStart_' + day).value = schedule.start || '09:00';
+                document.getElementById('workEnd_' + day).value = schedule.end || '18:00';
             });
-            document.getElementById('workStart').value = (currentUser.workSchedule && currentUser.workSchedule.start) || '09:00';
-            document.getElementById('workEnd').value = (currentUser.workSchedule && currentUser.workSchedule.end) || '18:00';
             document.getElementById('workInterval').value = currentUser.interval || 30;
             updateThemeControls();
             updateSettingsSummary();
@@ -2212,21 +2271,21 @@
         async function saveSettings(e) {
             e.preventDefault();
             if (!currentUser) return;
+
+            const workDays = {};
+            const workSchedules = {};
+            SETTINGS_DAY_KEYS.forEach(day => {
+                workDays[day] = document.getElementById('workDay_' + day).checked;
+                workSchedules[day] = {
+                    start: document.getElementById('workStart_' + day).value,
+                    end: document.getElementById('workEnd_' + day).value
+                };
+            });
             
             const payload = {
-                workDays: {
-                    monday: document.getElementById('workDay_monday').checked,
-                    tuesday: document.getElementById('workDay_tuesday').checked,
-                    wednesday: document.getElementById('workDay_wednesday').checked,
-                    thursday: document.getElementById('workDay_thursday').checked,
-                    friday: document.getElementById('workDay_friday').checked,
-                    saturday: document.getElementById('workDay_saturday').checked,
-                    sunday: document.getElementById('workDay_sunday').checked,
-                },
-                workSchedule: {
-                    start: document.getElementById('workStart').value,
-                    end: document.getElementById('workEnd').value
-                },
+                workDays,
+                workSchedule: workSchedules.monday,
+                workSchedules,
                 interval: parseInt(document.getElementById('workInterval').value, 10)
             };
 

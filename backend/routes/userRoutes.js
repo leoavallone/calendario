@@ -4,7 +4,7 @@ import { verifyToken } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
 import { User } from "../models/User.js";
 import { createUserSchema } from "../schemas/userSchema.js";
-import { TIME_RE, timeToMinutes } from "../utils/schedule.js";
+import { DAY_KEYS, TIME_RE, timeToMinutes } from "../utils/schedule.js";
 import { sanitizeUser } from "../utils/sanitizeUser.js";
 
 export const createUserRouter = (io) => {
@@ -43,7 +43,7 @@ export const createUserRouter = (io) => {
   router.put("/users/:id/work-days", verifyToken, async (req, res) => {
     try {
       const { id } = req.params;
-      const { blockedDates, extraWorkDates, blockedSlots, workDays, workSchedule, interval } = req.body;
+      const { blockedDates, extraWorkDates, blockedSlots, workDays, workSchedule, workSchedules, interval } = req.body;
 
       const update = {};
       if (blockedDates !== undefined) update.blockedDates = blockedDates;
@@ -77,6 +77,28 @@ export const createUserRouter = (io) => {
           return res.status(400).json({ error: "O horário final deve ser maior que o inicial" });
         }
         update.workSchedule = workSchedule;
+      }
+      if (workSchedules !== undefined) {
+        if (!workSchedules || typeof workSchedules !== "object") {
+          return res.status(400).json({ error: "Horários por dia inválidos" });
+        }
+
+        const normalizedSchedules = {};
+        for (const day of DAY_KEYS) {
+          const schedule = workSchedules[day];
+          if (!schedule?.start || !schedule?.end) {
+            return res.status(400).json({ error: "Horários por dia inválidos" });
+          }
+          if (!TIME_RE.test(schedule.start) || !TIME_RE.test(schedule.end)) {
+            return res.status(400).json({ error: "Horários por dia inválidos" });
+          }
+          if (timeToMinutes(schedule.start) >= timeToMinutes(schedule.end)) {
+            return res.status(400).json({ error: "O horário final deve ser maior que o inicial" });
+          }
+          normalizedSchedules[day] = { start: schedule.start, end: schedule.end };
+        }
+
+        update.workSchedules = normalizedSchedules;
       }
       if (interval !== undefined) {
         const intervalNumber = Number(interval);
