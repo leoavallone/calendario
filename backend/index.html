@@ -795,6 +795,34 @@
             transition: all 0.2s ease;
         }
 
+        .agenda-person-card-content {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .agenda-settings-btn {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .agenda-settings-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+
         .agenda-person-card:hover,
         .agenda-person-card.active {
             border-color: var(--primary);
@@ -1489,14 +1517,30 @@
                 const count = getUserDayAppointmentsCount(user._id);
                 return `
                     <button class="agenda-person-card ${active}" onclick="selectUserById('${user._id}')">
-                        <span class="agenda-person-name">
-                            ${user.name}
-                            <span>${count}</span>
+                        <span class="agenda-person-card-content">
+                            <span>
+                                <span class="agenda-person-name">
+                                    ${user.name}
+                                    <span>${count}</span>
+                                </span>
+                                <span class="agenda-person-meta">${start} - ${end} · ${user.interval || 30} min</span>
+                            </span>
+                            <span class="agenda-settings-btn"
+                                  role="button"
+                                  tabindex="0"
+                                  title="Editar horários de ${user.name}"
+                                  onclick="event.stopPropagation(); openSettingsForUser('${user._id}')">⏰</span>
                         </span>
-                        <span class="agenda-person-meta">${start} - ${end} · ${user.interval || 30} min</span>
                     </button>
                 `;
             }).join('');
+        }
+
+        async function openSettingsForUser(userId) {
+            if (currentUser?._id !== userId) {
+                await selectUserById(userId, { silent: true });
+            }
+            openSettingsModal();
         }
 
         async function refreshCurrentUser() {
@@ -1767,7 +1811,7 @@
             }, 3000);
         }
 
-        async function selectUserById(id) {
+        async function selectUserById(id, options = {}) {
             currentUser = usersData.find(u => u._id === id) || null;
             selectedSlots.clear();
             updateWorkScheduleTag();
@@ -1778,7 +1822,7 @@
             renderEventsList();
             renderTimeSlots();
             renderTeamAgendaList();
-            if (currentUser) showNotification(`Usuário alterado para ${currentUser.name}`);
+            if (currentUser && !options.silent) showNotification(`Usuário alterado para ${currentUser.name}`);
         }
 
         async function loadUserAppointments() {
