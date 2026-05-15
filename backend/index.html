@@ -812,6 +812,19 @@
             gap: 10px;
         }
 
+        .slot-action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .slot-action-buttons .btn {
+            justify-content: center;
+            padding: 10px;
+            font-size: 0.78rem;
+            white-space: normal;
+        }
+
         .slot-actions-title {
             color: var(--text);
             font-size: 0.9rem;
@@ -1113,9 +1126,6 @@
                 <div class="user-selector">
                     <span>👤</span>
                     <span class="logged-user-chip" id="loggedUserName">Carregando...</span>
-                    <select id="userSelect" onchange="changeUser()">
-                        <option value="">Carregando...</option>
-                    </select>
                     <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px;" onclick="openSettingsModal()" title="Configurações de Expediente">⚙️</button>
                     <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px;" onclick="logout()" title="Sair da Conta">🚪</button>
                 </div>
@@ -1201,7 +1211,10 @@
                             <div class="slot-actions-title" id="slotActionTitle">Horário selecionado</div>
                             <div class="slot-actions-text" id="slotActionText">Escolha um horário para bloquear ou liberar.</div>
                         </div>
-                        <button class="btn btn-secondary" id="toggleSlotBtn" onclick="toggleSelectedSlotBlock()">Bloquear Horário</button>
+                        <div class="slot-action-buttons">
+                            <button class="btn btn-secondary" id="blockSlotsBtn" onclick="setSelectedSlotsBlock(true)">Bloquear selecionados</button>
+                            <button class="btn btn-secondary" id="unblockSlotsBtn" onclick="setSelectedSlotsBlock(false)">Desbloquear selecionados</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1312,7 +1325,7 @@
         let currentUser = null;      // objeto usuário completo da API
         let editingEventId = null;
         let usersData = [];          // lista de usuários da API
-        let selectedSlot = null;
+        let selectedSlots = new Set();
         let currentTheme = localStorage.getItem('oneflow_theme') || 'light';
 
         // Mapeamento: índice JS (0=Dom) → chave workDays
@@ -1368,24 +1381,15 @@
                 if (!res.ok) throw new Error('Falha ao buscar usuários');
                 usersData = await res.json();
 
-                const select = document.getElementById('userSelect');
-                select.innerHTML = '';
-                
                 if (localUser.role === 'barber') {
                     usersData = usersData.filter(u => u._id === localUser._id);
-                    select.disabled = true;
                 }
 
                 usersData.forEach((user, idx) => {
-                    const opt = document.createElement('option');
-                    opt.value = user._id;
-                    opt.textContent = user.name;
-                    select.appendChild(opt);
-                    if (idx === 0) currentUser = user;
+                    if (user._id === localUser._id || (!currentUser && idx === 0)) currentUser = user;
                 });
 
                 if (currentUser) {
-                    select.value = currentUser._id;
                     updateWorkScheduleTag();
                     renderTeamAgendaList();
                     await loadVisibleAppointments();
@@ -1397,8 +1401,6 @@
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('userSelect').innerHTML =
-                    '<option value="">Erro ao carregar usuários</option>';
                 showNotification('Não foi possível conectar à API', 'error');
             }
         }
@@ -1517,7 +1519,7 @@
         async function toggleDayWorkStatus() {
             if (!currentUser) return;
             const dateStr = formatDate(selectedDate);
-            selectedSlot = null;
+            selectedSlots.clear();
             
             let blockedDates = currentUser.blockedDates || [];
             let extraWorkDates = currentUser.extraWorkDates || [];
@@ -1751,16 +1753,9 @@
             }, 3000);
         }
 
-        async function changeUser() {
-            const id = document.getElementById('userSelect').value;
-            await selectUserById(id);
-        }
-
         async function selectUserById(id) {
             currentUser = usersData.find(u => u._id === id) || null;
-            selectedSlot = null;
-            const select = document.getElementById('userSelect');
-            if (select && currentUser) select.value = currentUser._id;
+            selectedSlots.clear();
             updateWorkScheduleTag();
             if (currentUser) {
                 await loadUserAppointments();
@@ -1879,7 +1874,7 @@
         function selectDate(day, dateStr) {
             const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             selectedDate = d;
-            selectedSlot = null;
+            selectedSlots.clear();
             renderCalendar();
             renderEventsList();
             renderTimeSlots();
@@ -1967,7 +1962,7 @@
                 const cls        = [
                     isBooked ? 'disabled booked' : '',
                     isBlocked ? 'blocked' : '',
-                    isSelected || selectedSlot === time ? 'selected' : ''
+                    isSelected || selectedSlots.has(time) ? 'selected' : ''
                 ].filter(Boolean).join(' ');
                 const label = isBooked ? 'ocupado' : (isBlocked ? 'bloqueado' : '');
 
@@ -1983,7 +1978,11 @@
         }
 
         function selectTime(time, canSchedule = true) {
-            selectedSlot = time;
+            if (selectedSlots.has(time)) {
+                selectedSlots.delete(time);
+            } else {
+                selectedSlots.add(time);
+            }
             if (canSchedule) {
                 document.getElementById('eventTime').value = time;
             }
@@ -2000,39 +1999,45 @@
             const wrapper = document.getElementById('slotActions');
             const title = document.getElementById('slotActionTitle');
             const text = document.getElementById('slotActionText');
-            const btn = document.getElementById('toggleSlotBtn');
-            if (!wrapper || !title || !text || !btn) return;
+            const blockBtn = document.getElementById('blockSlotsBtn');
+            const unblockBtn = document.getElementById('unblockSlotsBtn');
+            if (!wrapper || !title || !text || !blockBtn || !unblockBtn) return;
 
-            if (!selectedSlot || !allSlots.includes(selectedSlot)) {
+            const selectedAvailableSlots = [...selectedSlots].filter(time => allSlots.includes(time) && !bookedTimes.includes(time));
+            if (selectedAvailableSlots.length === 0) {
                 wrapper.style.display = allSlots.length ? 'grid' : 'none';
                 title.textContent = 'Bloqueio por horário';
-                text.textContent = 'Clique em um horário livre para bloquear ou em um bloqueado para liberar.';
-                btn.style.display = 'none';
+                text.textContent = 'Clique em um ou mais horários para bloquear ou desbloquear em lote.';
+                blockBtn.disabled = true;
+                unblockBtn.disabled = true;
                 return;
             }
 
-            const isBooked = bookedTimes.includes(selectedSlot);
-            const isBlocked = blockedTimes.includes(selectedSlot);
+            const blockedSelected = selectedAvailableSlots.filter(time => blockedTimes.includes(time)).length;
+            const freeSelected = selectedAvailableSlots.length - blockedSelected;
             wrapper.style.display = 'grid';
-            title.textContent = `${selectedSlot} em ${formatDateForDisplay(selectedDate)}`;
-            text.textContent = isBooked
-                ? 'Horário ocupado por agendamento. Exclua ou edite o agendamento para liberar.'
-                : (isBlocked ? 'Este horário está bloqueado manualmente.' : 'Este horário está livre para agendamento.');
-            btn.style.display = isBooked ? 'none' : 'inline-flex';
-            btn.textContent = isBlocked ? 'Desbloquear Horário' : 'Bloquear Horário';
-            btn.classList.toggle('btn-primary', isBlocked);
-            btn.classList.toggle('btn-secondary', !isBlocked);
+            title.textContent = `${selectedAvailableSlots.length} horário(s) em ${formatDateForDisplay(selectedDate)}`;
+            text.textContent = `${freeSelected} livre(s) e ${blockedSelected} bloqueado(s) selecionado(s).`;
+            blockBtn.disabled = freeSelected === 0;
+            unblockBtn.disabled = blockedSelected === 0;
         }
 
-        async function toggleSelectedSlotBlock() {
-            if (!currentUser || !selectedSlot) return;
+        async function setSelectedSlotsBlock(shouldBlock) {
+            if (!currentUser || selectedSlots.size === 0) return;
 
             const dateStr = formatDate(selectedDate);
             const slots = currentUser.blockedSlots || [];
-            const exists = slots.some(slot => slot.date === dateStr && slot.time === selectedSlot);
-            const blockedSlots = exists
-                ? slots.filter(slot => !(slot.date === dateStr && slot.time === selectedSlot))
-                : [...slots, { date: dateStr, time: selectedSlot }];
+            const selectedForDate = new Set([...selectedSlots]);
+            const selectedExistingSlots = slots.filter(slot => slot.date === dateStr && selectedForDate.has(slot.time));
+            const nextSlots = slots.filter(slot => !(slot.date === dateStr && selectedForDate.has(slot.time)));
+            const blockedSlots = shouldBlock
+                ? [
+                    ...nextSlots,
+                    ...[...selectedForDate]
+                        .filter(time => !selectedExistingSlots.some(slot => slot.time === time))
+                        .map(time => ({ date: dateStr, time }))
+                ]
+                : nextSlots;
 
             try {
                 const res = await apiFetch(`/api/users/${currentUser._id}/work-days`, {
@@ -2045,10 +2050,11 @@
                 Object.assign(currentUser, updatedUser);
                 const userIndex = usersData.findIndex(user => user._id === updatedUser._id);
                 if (userIndex >= 0) usersData[userIndex] = currentUser;
+                selectedSlots.clear();
                 renderTimeSlots();
-                showNotification(exists ? 'Horário desbloqueado com sucesso!' : 'Horário bloqueado com sucesso!', 'success');
+                showNotification(shouldBlock ? 'Horários bloqueados com sucesso!' : 'Horários desbloqueados com sucesso!', 'success');
             } catch (err) {
-                showNotification('Erro ao atualizar o horário', 'error');
+                showNotification('Erro ao atualizar os horários', 'error');
             }
         }
 
@@ -2065,7 +2071,8 @@
             document.getElementById('eventModal').classList.add('active');
             document.getElementById('eventForm').reset();
             document.getElementById('eventDate').value = formatDate(selectedDate);
-            if (selectedSlot && !getBlockedTimesForDate(formatDate(selectedDate)).includes(selectedSlot)) {
+            const selectedSlot = [...selectedSlots][0];
+            if (selectedSlots.size === 1 && selectedSlot && !getBlockedTimesForDate(formatDate(selectedDate)).includes(selectedSlot)) {
                 document.getElementById('eventTime').value = selectedSlot;
             }
             document.getElementById('modalTitle').textContent = 'Novo Agendamento';
