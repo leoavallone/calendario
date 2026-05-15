@@ -742,6 +742,13 @@
             background: rgba(245, 158, 11, 0.08);
         }
 
+        .time-slot.blocked.selected {
+            background: var(--primary);
+            border-color: var(--primary-light);
+            color: #fff;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+        }
+
         .time-slot.booked {
             border-color: rgba(239, 68, 68, 0.45);
             color: var(--danger);
@@ -764,6 +771,16 @@
         .agenda-switcher {
             display: grid;
             gap: 10px;
+        }
+
+        .sidebar {
+            display: grid;
+            gap: 20px;
+            align-self: stretch;
+        }
+
+        .sidebar-schedule-card {
+            min-height: 360px;
         }
 
         .agenda-person-card {
@@ -864,7 +881,7 @@
 
         .settings-summary {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -1032,6 +1049,10 @@
                 padding: 15px;
             }
 
+            .sidebar-schedule-card {
+                min-height: auto;
+            }
+
             .card-header {
                 flex-wrap: wrap;
                 gap: 10px;
@@ -1168,7 +1189,7 @@
             </div>
 
             <div class="sidebar">
-                <div class="card" id="teamAgendaCard" style="display:none; margin-bottom: 20px;">
+                <div class="card" id="teamAgendaCard" style="display:none;">
                     <div class="card-header">
                         <div class="card-title">
                             <span>👥</span>
@@ -1178,7 +1199,7 @@
                     <div class="agenda-switcher" id="teamAgendaList"></div>
                 </div>
 
-                <div class="card">
+                <div class="card sidebar-schedule-card">
                     <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 5px;">
                         <div class="card-title" style="display: flex; justify-content: space-between; width: 100%;">
                             <span><span>📋</span> Agendamentos do Dia</span>
@@ -1196,7 +1217,7 @@
                     </div>
                 </div>
 
-                <div class="card" style="margin-top: 20px;">
+                <div class="card sidebar-schedule-card">
                     <div class="card-header">
                         <div class="card-title">
                             <span>⏰</span>
@@ -1262,6 +1283,13 @@
                 <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
             </div>
             <form id="settingsForm" onsubmit="saveSettings(event)">
+                <div class="form-group">
+                    <label>Tema da Plataforma</label>
+                    <div class="theme-toggle">
+                        <button type="button" class="theme-option" id="themeLightBtn" onclick="setTheme('light')">Claro</button>
+                        <button type="button" class="theme-option" id="themeDarkBtn" onclick="setTheme('dark')">Escuro</button>
+                    </div>
+                </div>
                 <div class="settings-summary">
                     <div class="settings-summary-item">
                         <span class="settings-summary-label">Expediente</span>
@@ -1270,17 +1298,6 @@
                     <div class="settings-summary-item">
                         <span class="settings-summary-label">Intervalo</span>
                         <span class="settings-summary-value" id="settingsIntervalSummary">--</span>
-                    </div>
-                    <div class="settings-summary-item">
-                        <span class="settings-summary-label">Tema</span>
-                        <span class="settings-summary-value" id="settingsThemeSummary">--</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Tema da Plataforma</label>
-                    <div class="theme-toggle">
-                        <button type="button" class="theme-option" id="themeLightBtn" onclick="setTheme('light')">Claro</button>
-                        <button type="button" class="theme-option" id="themeDarkBtn" onclick="setTheme('dark')">Escuro</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1443,13 +1460,10 @@
         function updateSettingsSummary() {
             if (!currentUser) return;
             const { start, end } = currentUser.workSchedule || { start: '09:00', end: '18:00' };
-            const themeLabel = currentTheme === 'dark' ? 'Escuro' : 'Claro';
             const hours = document.getElementById('settingsHoursSummary');
             const interval = document.getElementById('settingsIntervalSummary');
-            const theme = document.getElementById('settingsThemeSummary');
             if (hours) hours.textContent = `${start} - ${end}`;
             if (interval) interval.textContent = `${currentUser.interval || 30} min`;
-            if (theme) theme.textContent = themeLabel;
         }
 
         function getUserDayAppointmentsCount(userId) {
