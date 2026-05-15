@@ -149,11 +149,13 @@
             display: grid;
             grid-template-columns: 1fr 350px;
             gap: 25px;
+            align-items: stretch;
         }
 
         @media (max-width: 968px) {
             .grid {
                 grid-template-columns: 1fr;
+                align-items: start;
             }
         }
 
@@ -799,10 +801,12 @@
             display: grid;
             gap: 20px;
             align-self: stretch;
+            grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
         }
 
         .sidebar-schedule-card {
-            min-height: 360px;
+            min-height: 0;
+            height: 100%;
         }
 
         .agenda-person-card {
@@ -1100,7 +1104,11 @@
             }
 
             .sidebar-schedule-card {
-                min-height: auto;
+                height: auto;
+            }
+
+            .sidebar {
+                grid-template-rows: none;
             }
 
             .card-header {

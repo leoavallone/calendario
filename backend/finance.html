@@ -113,7 +113,15 @@
             display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.15);
             padding: 10px 20px; border-radius: 10px; backdrop-filter: blur(10px);
         }
-        .user-selector select { background: var(--surface-raised); border: 1px solid var(--border); padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; color: var(--text); }
+        .logged-user-chip {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         
         .dashboard-cards {
             display: grid;
@@ -247,9 +255,7 @@
             <div class="header-right">
                 <div class="user-selector">
                     <span>👤</span>
-                    <select id="userSelect" onchange="changeUser()">
-                        <option value="">Carregando...</option>
-                    </select>
+                    <span class="logged-user-chip" id="loggedUserName">Carregando...</span>
                     <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px; margin-left:10px; cursor:pointer;" onclick="logout()" title="Sair do Sistema">⏻</button>
                 </div>
             </div>
@@ -451,19 +457,11 @@
                 if (!res.ok) throw new Error('Falha ao buscar usuários');
                 usersData = await res.json();
 
-                const select = document.getElementById('userSelect');
-                select.innerHTML = '';
-                usersData.forEach((user, idx) => {
-                    const opt = document.createElement('option');
-                    opt.value = user._id;
-                    opt.textContent = user.name;
-                    select.appendChild(opt);
-                    if (idx === 0) currentUser = user;
-                });
-
                 const realLocalUser = usersData.find(u => u._id === localUser._id);
                 if (realLocalUser) {
                     localStorage.setItem('roqia_user', JSON.stringify(realLocalUser));
+                    currentUser = realLocalUser;
+                    updateLoggedUserName(realLocalUser);
                     if (realLocalUser.role !== 'owner') {
                         window.location.href = '/';
                         return;
@@ -479,12 +477,11 @@
             }
         }
 
-        function changeUser() {
-            const id = document.getElementById('userSelect').value;
-            currentUser = usersData.find(u => u._id === id);
-            if(currentUser) {
-                loadTransactions();
-            }
+        function updateLoggedUserName(user) {
+            const el = document.getElementById('loggedUserName');
+            if (!el || !user) return;
+            el.textContent = user.name || user.email || 'Conta logada';
+            el.title = `Logado como ${el.textContent}`;
         }
 
         function changeMonth(delta) {
