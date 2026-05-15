@@ -149,13 +149,17 @@
             display: grid;
             grid-template-columns: 1fr 350px;
             gap: 25px;
-            align-items: start;
+            align-items: stretch;
         }
 
         @media (max-width: 968px) {
             .grid {
                 grid-template-columns: 1fr;
                 align-items: start;
+            }
+
+            .main-content {
+                display: block;
             }
         }
 
@@ -165,6 +169,15 @@
             padding: 25px;
             box-shadow: var(--shadow);
             border: 1px solid var(--border);
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 0;
+        }
+
+        .main-content > .card {
+            width: 100%;
         }
 
         .card-header {
