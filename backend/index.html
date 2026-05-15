@@ -1127,7 +1127,7 @@
                     <span>👤</span>
                     <span class="logged-user-chip" id="loggedUserName">Carregando...</span>
                     <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px;" onclick="openSettingsModal()" title="Configurações de Expediente">⚙️</button>
-                    <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px;" onclick="logout()" title="Sair da Conta">🚪</button>
+                    <button class="btn-icon" style="background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:8px; width:36px; height:36px;" onclick="logout()" title="Sair da Conta">⏻</button>
                 </div>
                 <div id="workScheduleTag" class="work-schedule-tag" style="display:none"></div>
             </div>
@@ -1258,7 +1258,7 @@
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Horário de Funcionamento</h2>
+                <h2 class="modal-title" id="settingsModalTitle">Horário de Funcionamento</h2>
                 <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
             </div>
             <form id="settingsForm" onsubmit="saveSettings(event)">
@@ -1958,11 +1958,10 @@
                 const isBooked   = bookedTimes.includes(time);
                 const isBlocked  = blockedTimes.includes(time);
                 const isFree     = freeSlots.includes(time);
-                const isSelected = document.getElementById('eventTime')?.value === time;
                 const cls        = [
                     isBooked ? 'disabled booked' : '',
                     isBlocked ? 'blocked' : '',
-                    isSelected || selectedSlots.has(time) ? 'selected' : ''
+                    selectedSlots.has(time) ? 'selected' : ''
                 ].filter(Boolean).join(' ');
                 const label = isBooked ? 'ocupado' : (isBlocked ? 'bloqueado' : '');
 
@@ -2050,6 +2049,7 @@
                 Object.assign(currentUser, updatedUser);
                 const userIndex = usersData.findIndex(user => user._id === updatedUser._id);
                 if (userIndex >= 0) usersData[userIndex] = currentUser;
+                document.getElementById('eventTime').value = '';
                 selectedSlots.clear();
                 renderTimeSlots();
                 showNotification(shouldBlock ? 'Horários bloqueados com sucesso!' : 'Horários desbloqueados com sucesso!', 'success');
@@ -2136,6 +2136,7 @@
         function openSettingsModal() {
             if (!currentUser) return;
             document.getElementById('settingsModal').classList.add('active');
+            document.getElementById('settingsModalTitle').textContent = `Horário de Funcionamento - ${currentUser.name}`;
             ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(day => {
                  document.getElementById('workDay_' + day).checked = currentUser.workDays && currentUser.workDays[day] === true;
             });
