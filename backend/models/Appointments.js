@@ -6,6 +6,8 @@ const AppointmentSchema = new mongoose.Schema(
     title: { type: String, required: true },
     date: { type: String, required: true },
     time: { type: String, required: true },
+    phone: { type: String },
+    phoneNormalized: { type: String, index: true },
     description: { type: String },
   },
   { timestamps: true }

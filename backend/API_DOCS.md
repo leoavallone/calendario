@@ -49,7 +49,32 @@ Acionado pelo n8n quando o consumidor confirmar qual horário e data do WhatsApp
   "title": "Corte de Cabelo (Agendado pelo WhatsApp)",
   "date": "2026-05-10",
   "time": "15:30",
+  "phone": "+55 (11) 99999-9999",
   "description": "Via WhatsApp do número: +55 (11) 9...."
+}
+```
+
+### 2.3 `GET /api/appointments/by-phone`
+Lista os agendamentos vinculados a um número de telefone. Funciona tanto para novos agendamentos com o campo `phone` quanto para registros antigos onde o número ficou dentro de `description`.
+* **Header:** `Authorization: Bearer <SEU_TOKEN>`
+* **Query Params:** `phone` obrigatório, `userId` opcional.
+* **Exemplo:** `/api/appointments/by-phone?phone=5511999999999`
+
+### 2.4 `POST /api/appointments/cancel`
+Cancela um agendamento pelo `appointmentId` ou pelo telefone. Para evitar cancelamento errado, se o telefone encontrar mais de um agendamento, a API retorna `409` com a lista e pede para informar `appointmentId`, `date` ou `time`.
+* **Header:** `Authorization: Bearer <SEU_TOKEN>`
+* **Corpo JSON por telefone:**
+```json
+{
+  "phone": "5511999999999",
+  "date": "2026-05-10",
+  "time": "15:30"
+}
+```
+* **Corpo JSON por ID:**
+```json
+{
+  "appointmentId": "ID_DO_AGENDAMENTO"
 }
 ```
 

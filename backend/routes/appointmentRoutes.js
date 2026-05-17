@@ -9,6 +9,52 @@ import {
 } from "../schemas/AppointmentSchema.js";
 import { generateTimeSlots, getWorkScheduleForDate, isSlotBlockedForUser, isWorkDayForUser } from "../utils/schedule.js";
 
+const normalizePhone = (phone = "") => String(phone).replace(/\D/g, "");
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const phoneToLooseRegex = (phoneNormalized) => phoneNormalized
+  .split("")
+  .map(escapeRegex)
+  .join("\\D*");
+
+const extractPhoneFromText = (text = "") => {
+  const matches = String(text).match(/(?:\+?\d[\d\s().-]{8,}\d)/g) || [];
+  return normalizePhone(matches[0] || "");
+};
+
+const applyPhoneMetadata = (appointment) => {
+  const phoneNormalized = normalizePhone(appointment.phone) || extractPhoneFromText(appointment.description);
+  if (phoneNormalized) {
+    appointment.phoneNormalized = phoneNormalized;
+  } else {
+    delete appointment.phoneNormalized;
+  }
+  return appointment;
+};
+
+const applyPhoneMetadataForUpdate = (appointment) => {
+  if (!Object.prototype.hasOwnProperty.call(appointment, "phone") &&
+      !Object.prototype.hasOwnProperty.call(appointment, "description")) {
+    return appointment;
+  }
+  return applyPhoneMetadata(appointment);
+};
+
+const buildPhoneQuery = (phone) => {
+  const phoneNormalized = normalizePhone(phone);
+  if (!phoneNormalized) return null;
+
+  const loosePhoneRegex = new RegExp(phoneToLooseRegex(phoneNormalized), "i");
+  return {
+    $or: [
+      { phoneNormalized },
+      { phone: loosePhoneRegex },
+      { description: loosePhoneRegex },
+    ],
+  };
+};
+
 export const createAppointmentRouter = (io) => {
   const router = express.Router();
 
@@ -49,6 +95,22 @@ export const createAppointmentRouter = (io) => {
     }
   });
 
+  router.get("/appointments/by-phone", verifyToken, async (req, res) => {
+    try {
+      const { phone, userId } = req.query;
+      const phoneQuery = buildPhoneQuery(phone);
+      if (!phoneQuery) return res.status(400).json({ error: "phone obrigatório" });
+
+      const query = { ...phoneQuery };
+      if (userId) query.userId = userId;
+
+      const appointments = await Appointment.find(query).sort({ date: 1, time: 1, createdAt: 1 });
+      return res.json(appointments);
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao buscar agendamentos por telefone" });
+    }
+  });
+
   router.post(
     "/appointments",
     verifyToken,
@@ -66,7 +128,7 @@ export const createAppointmentRouter = (io) => {
 
         if (exists) return res.status(400).json({ error: "Horário já está ocupado" });
 
-        const appointment = new Appointment(req.body);
+        const appointment = new Appointment(applyPhoneMetadata(req.body));
         await appointment.save();
 
         io.emit("refreshData");
@@ -110,7 +172,7 @@ export const createAppointmentRouter = (io) => {
           if (exists) return res.status(400).json({ error: "Horário já está ocupado" });
         }
 
-        const appointment = await Appointment.findByIdAndUpdate(id, req.body, { new: true });
+        const appointment = await Appointment.findByIdAndUpdate(id, applyPhoneMetadataForUpdate(req.body), { new: true });
 
         io.emit("refreshData");
         return res.json(appointment);
@@ -119,6 +181,50 @@ export const createAppointmentRouter = (io) => {
       }
     }
   );
+
+  const cancelAppointment = async (req, res) => {
+    try {
+      const params = { ...req.query, ...req.body };
+      const { appointmentId, phone, userId, date, time } = params;
+      const query = {};
+
+      if (appointmentId) {
+        query._id = appointmentId;
+        const phoneQuery = buildPhoneQuery(phone);
+        if (phoneQuery) Object.assign(query, phoneQuery);
+      } else {
+        const phoneQuery = buildPhoneQuery(phone);
+        if (!phoneQuery) {
+          return res.status(400).json({ error: "appointmentId ou phone obrigatório" });
+        }
+        Object.assign(query, phoneQuery);
+      }
+
+      if (userId) query.userId = userId;
+      if (date) query.date = date;
+      if (time) query.time = time;
+
+      const matches = await Appointment.find(query).sort({ date: 1, time: 1, createdAt: 1 });
+      if (!matches.length) return res.status(404).json({ error: "Agendamento não encontrado" });
+
+      if (matches.length > 1) {
+        return res.status(409).json({
+          error: "Mais de um agendamento encontrado. Informe appointmentId, date ou time para cancelar.",
+          appointments: matches,
+        });
+      }
+
+      await Appointment.findByIdAndDelete(matches[0]._id);
+
+      io.emit("refreshData");
+      return res.json({ message: "Agendamento cancelado com sucesso", appointment: matches[0] });
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao cancelar agendamento" });
+    }
+  };
+
+  router.post("/appointments/cancel", verifyToken, cancelAppointment);
+  router.delete("/appointments/cancel", verifyToken, cancelAppointment);
 
   router.delete("/appointments/:id", verifyToken, async (req, res) => {
     try {
