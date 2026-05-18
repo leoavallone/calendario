@@ -2249,6 +2249,11 @@
             return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         }
 
+        function extractPhoneFromText(text = '') {
+            const matches = String(text).match(/(?:\+?\d[\d\s().-]{8,}\d)/g) || [];
+            return (matches[0] || '').replace(/\D/g, '');
+        }
+
         // Modal functions
         function openModal() {
             document.getElementById('eventModal').classList.add('active');
@@ -2308,7 +2313,7 @@
 
             document.getElementById('eventId').value = event.id;
             document.getElementById('eventTitle').value = event.title;
-            document.getElementById('eventPhone').value = event.phone || '';
+            document.getElementById('eventPhone').value = event.phone || event.phoneNormalized || extractPhoneFromText(event.description);
             document.getElementById('eventDate').value = event.date;
             document.getElementById('eventTime').value = event.time;
             document.getElementById('eventDescription').value = event.description || '';

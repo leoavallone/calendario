@@ -22,6 +22,86 @@ const normalizePhone = (phone = "") => String(phone).replace(/\D/g, "");
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const extractPhoneFromText = (text = "") => {
+  const matches = String(text).match(/(?:\+?\d[\d\s().-]{8,}\d)/g) || [];
+  return normalizePhone(matches[0] || "");
+};
+
+const extractCustomerNameFromAppointment = (appointment) => {
+  if (appointment.customerName) return appointment.customerName;
+
+  const description = String(appointment.description || "");
+  const clientMatch = description.match(/Cliente:\s*([^|;\n]+)/i);
+  if (clientMatch?.[1]) return clientMatch[1].trim();
+
+  const title = String(appointment.title || "");
+  if (title.includes(" - ")) return title.split(" - ").slice(1).join(" - ").trim();
+  return title.trim() || "Cliente sem nome";
+};
+
+const getAppointmentPhone = (appointment) => (
+  appointment.phoneNormalized ||
+  normalizePhone(appointment.phone) ||
+  extractPhoneFromText(appointment.description)
+);
+
+const getTeamUserIds = async (organizationId) => {
+  const teamUsers = await User.find({ organizationId }).select("_id");
+  return teamUsers.map((user) => String(user._id));
+};
+
+const buildLegacyCustomerRows = async ({ organizationId, search, year }) => {
+  const normalizedSearch = normalizePhone(search);
+  const textSearch = String(search || "").trim();
+  const userIds = await getTeamUserIds(organizationId);
+  const query = { userId: { $in: userIds } };
+  if (year) query.date = { $regex: `^${year}-` };
+
+  const appointments = await Appointment.find(query);
+  const byPhone = new Map();
+
+  for (const appointment of appointments) {
+    const phoneNormalized = getAppointmentPhone(appointment);
+    if (!phoneNormalized) continue;
+
+    const name = extractCustomerNameFromAppointment(appointment);
+    const haystack = `${name} ${appointment.title || ""} ${appointment.description || ""} ${phoneNormalized}`.toLowerCase();
+    if (textSearch && !haystack.includes(textSearch.toLowerCase()) && phoneNormalized !== normalizedSearch) {
+      continue;
+    }
+
+    const current = byPhone.get(phoneNormalized) || {
+      _id: `legacy-${phoneNormalized}`,
+      customerId: null,
+      name,
+      phone: appointment.phone || phoneNormalized,
+      phoneNormalized,
+      totalAppointments: 0,
+      firstAppointmentAt: `${appointment.date} ${appointment.time}`,
+      lastAppointmentAt: `${appointment.date} ${appointment.time}`,
+      firstAppointmentDate: appointment.date,
+      lastAppointmentDate: appointment.date,
+      professionals: {},
+    };
+
+    current.totalAppointments += 1;
+    if (!current.name || current.name === appointment.title) current.name = name;
+    const appointmentDateTime = `${appointment.date} ${appointment.time}`;
+    if (appointmentDateTime < current.firstAppointmentAt) {
+      current.firstAppointmentAt = appointmentDateTime;
+      current.firstAppointmentDate = appointment.date;
+    }
+    if (appointmentDateTime > current.lastAppointmentAt) {
+      current.lastAppointmentAt = appointmentDateTime;
+      current.lastAppointmentDate = appointment.date;
+    }
+    current.professionals[appointment.userId] = (current.professionals[appointment.userId] || 0) + 1;
+    byPhone.set(phoneNormalized, current);
+  }
+
+  return [...byPhone.values()];
+};
+
 export const createCustomerRouter = () => {
   const router = express.Router();
 
@@ -42,7 +122,28 @@ export const createCustomerRouter = () => {
       }
 
       const customers = await Customer.find(query).sort({ lastAppointmentAt: -1, name: 1 });
-      return res.json(customers);
+      const legacyCustomers = await buildLegacyCustomerRows({
+        organizationId: getUserOrganizationId(authUser),
+        search,
+      });
+      const customersByPhone = new Map(customers.map((customer) => [customer.phoneNormalized, customer.toObject()]));
+
+      for (const legacyCustomer of legacyCustomers) {
+        const existing = customersByPhone.get(legacyCustomer.phoneNormalized);
+        if (existing) {
+          existing.totalAppointments = Math.max(existing.totalAppointments || 0, legacyCustomer.totalAppointments);
+          existing.firstAppointmentAt = existing.firstAppointmentAt || legacyCustomer.firstAppointmentAt;
+          existing.lastAppointmentAt = existing.lastAppointmentAt || legacyCustomer.lastAppointmentAt;
+          existing.phone = existing.phone || legacyCustomer.phone;
+          existing.name = existing.name || legacyCustomer.name;
+        } else {
+          customersByPhone.set(legacyCustomer.phoneNormalized, legacyCustomer);
+        }
+      }
+
+      const mergedCustomers = [...customersByPhone.values()]
+        .sort((a, b) => String(b.lastAppointmentAt || "").localeCompare(String(a.lastAppointmentAt || "")) || String(a.name || "").localeCompare(String(b.name || "")));
+      return res.json(mergedCustomers);
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar clientes" });
     }
@@ -59,8 +160,7 @@ export const createCustomerRouter = () => {
       }
 
       const organizationId = getUserOrganizationId(authUser);
-      const teamUsers = await User.find({ organizationId }).select("_id");
-      const userIds = teamUsers.map((user) => String(user._id));
+      const userIds = await getTeamUserIds(organizationId);
       const appointments = await Appointment.find({
         userId: { $in: userIds },
         date: { $regex: `^${year}-` },
@@ -72,14 +172,15 @@ export const createCustomerRouter = () => {
       const byCustomer = new Map();
 
       for (const appointment of appointments) {
-        const key = appointment.customerId || appointment.phoneNormalized || appointment.phone || appointment.title;
+        const phoneNormalized = getAppointmentPhone(appointment);
+        const key = phoneNormalized || appointment.customerId || appointment.title;
         if (!key) continue;
 
         const current = byCustomer.get(key) || {
           customerId: appointment.customerId || null,
-          name: appointment.customerName || appointment.title,
-          phone: appointment.phone || null,
-          phoneNormalized: appointment.phoneNormalized || null,
+          name: extractCustomerNameFromAppointment(appointment),
+          phone: appointment.phone || phoneNormalized || null,
+          phoneNormalized: phoneNormalized || null,
           totalAppointments: 0,
           firstAppointmentDate: appointment.date,
           lastAppointmentDate: appointment.date,
@@ -98,6 +199,11 @@ export const createCustomerRouter = () => {
         if (appointment.date > current.lastAppointmentDate) current.lastAppointmentDate = appointment.date;
         current.professionals[appointment.userId] = (current.professionals[appointment.userId] || 0) + 1;
         byCustomer.set(key, current);
+      }
+
+      for (const legacyCustomer of await buildLegacyCustomerRows({ organizationId, year })) {
+        if (byCustomer.has(legacyCustomer.phoneNormalized)) continue;
+        byCustomer.set(legacyCustomer.phoneNormalized, legacyCustomer);
       }
 
       const ranking = [...byCustomer.values()]
