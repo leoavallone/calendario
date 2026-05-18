@@ -120,16 +120,20 @@
 <body>
     <div class="login-card">
         <div class="logo-icon">🔐</div>
-        <h2 style="font-weight: 600; font-size: 1.8rem; margin-bottom: 2px;">Recuperar senha</h2>
-        <p>Informe o e-mail da conta e defina uma nova senha para voltar a acessar o OneFlow.</p>
+        <h2 id="pageTitle" style="font-weight: 600; font-size: 1.8rem; margin-bottom: 2px;">Recuperar senha</h2>
+        <p id="pageDescription">Informe o e-mail da conta para receber o link de redefinição.</p>
 
         <div id="messageBox" class="message"></div>
 
-        <form id="resetForm">
+        <form id="requestForm">
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" required placeholder="seu@email.com">
             </div>
+            <button type="submit" class="btn">Enviar link</button>
+        </form>
+
+        <form id="resetForm" style="display:none">
             <div class="form-group">
                 <label for="password">Nova senha</label>
                 <input type="password" id="password" required minlength="4" placeholder="••••••••">
@@ -164,10 +168,44 @@
             messageBox.style.display = 'block';
         }
 
-        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+        const resetToken = new URLSearchParams(window.location.search).get('token');
+        const requestForm = document.getElementById('requestForm');
+        const resetForm = document.getElementById('resetForm');
+
+        if (resetToken) {
+            document.getElementById('pageTitle').textContent = 'Criar nova senha';
+            document.getElementById('pageDescription').textContent = 'Digite e confirme sua nova senha para concluir a recuperação.';
+            requestForm.style.display = 'none';
+            resetForm.style.display = 'block';
+        }
+
+        requestForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const email = document.getElementById('email').value.trim();
+
+            try {
+                const res = await apiFetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showMessage(data.error || 'Não foi possível enviar o link.', 'error');
+                    return;
+                }
+
+                showMessage(data.message || 'Se esse email existir, enviaremos instruções.', 'success');
+            } catch (err) {
+                showMessage('Falha crítica no sistema.', 'error');
+            }
+        });
+
+        resetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
@@ -180,7 +218,7 @@
                 const res = await apiFetch('/api/auth/reset-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ token: resetToken, password })
                 });
                 const data = await res.json();
 

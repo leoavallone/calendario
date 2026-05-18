@@ -25,6 +25,9 @@ const UserSchema = new mongoose.Schema({
     default: [],
   },
   password: { type: String, required: false },
+  passwordResetToken: { type: String },
+  passwordResetExpires: { type: Date },
+  organizationId: { type: String, index: true },
   role: { type: String, enum: ['owner', 'barber'], default: 'barber' }
 });
 

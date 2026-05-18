@@ -28,6 +28,42 @@ No n8n, você pode ter um nó (Node) que faz o Login uma vez (ou ao iniciar o fl
 > * Name: `Authorization`
 > * Value: `Bearer {{ $json.token }}` (ou a referência do nó anterior respectiva).
 
+### 1.3 Recuperação de senha por email
+Para recuperar senha esquecida, o sistema gera um token temporário e envia um link por email. Configure no ambiente:
+* `RESEND_API_KEY`
+* `RESET_PASSWORD_FROM` (ex: `OneFlow <no-reply@roqia.com.br>`)
+* `APP_BASE_URL` (ex: `https://oneflow.roqia.com.br`)
+
+#### `POST /api/auth/forgot-password`
+Solicita o link de recuperação.
+```json
+{
+  "email": "usuario@email.com"
+}
+```
+
+#### `POST /api/auth/reset-password`
+Redefine a senha usando o token recebido por email.
+```json
+{
+  "token": "TOKEN_DO_LINK",
+  "password": "nova_senha"
+}
+```
+
+**Importante multi-cliente:** usuários, agendamentos e financeiro agora são isolados por organização. Um token só consegue listar/alterar dados de usuários vinculados à mesma organização.
+
+### 1.4 Vincular usuário existente à equipe
+Use quando um barbeiro já existe no sistema, mas precisa aparecer na agenda do dono da conta.
+* **Header:** `Authorization: Bearer <TOKEN_DO_DONO>`
+* **Rota:** `POST /api/users/link-existing`
+* **Corpo JSON:**
+```json
+{
+  "email": "barbeiro@email.com"
+}
+```
+
 ---
 
 ## 2. Agendamentos via WhatsApp

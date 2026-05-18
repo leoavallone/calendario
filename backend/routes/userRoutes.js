@@ -7,12 +7,30 @@ import { createUserSchema } from "../schemas/userSchema.js";
 import { DAY_KEYS, TIME_RE, timeToMinutes } from "../utils/schedule.js";
 import { sanitizeUser } from "../utils/sanitizeUser.js";
 
+const getUserOrganizationId = (user) => user?.organizationId || String(user?._id || "");
+
+const getAuthenticatedUser = async (req) => {
+  const user = await User.findById(req.userId).select("-password -passwordResetToken -passwordResetExpires");
+  if (!user) return null;
+
+  if (!user.organizationId) {
+    user.organizationId = String(user._id);
+    await user.save();
+  }
+
+  return user;
+};
+
 export const createUserRouter = (io) => {
   const router = express.Router();
 
   router.get("/users", verifyToken, async (req, res) => {
     try {
-      const users = await User.find().select("-password");
+      const authUser = await getAuthenticatedUser(req);
+      if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+
+      const organizationId = getUserOrganizationId(authUser);
+      const users = await User.find({ organizationId }).select("-password -passwordResetToken -passwordResetExpires");
       return res.json(users);
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar usuários" });
@@ -25,6 +43,9 @@ export const createUserRouter = (io) => {
         return res.status(403).json({ error: "Apenas donos podem criar usuários por esta rota" });
       }
 
+      const authUser = await getAuthenticatedUser(req);
+      if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+
       const { email, password } = req.body;
       const exists = await User.findOne({ email });
       if (exists) {
@@ -32,7 +53,11 @@ export const createUserRouter = (io) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await User.create({ ...req.body, password: hashedPassword });
+      const user = await User.create({
+        ...req.body,
+        password: hashedPassword,
+        organizationId: getUserOrganizationId(authUser),
+      });
 
       return res.status(201).json(sanitizeUser(user));
     } catch (err) {
@@ -40,10 +65,51 @@ export const createUserRouter = (io) => {
     }
   });
 
+  router.post("/users/link-existing", verifyToken, async (req, res) => {
+    try {
+      if (req.userRole !== "owner") {
+        return res.status(403).json({ error: "Apenas donos podem vincular usuários" });
+      }
+
+      const authUser = await getAuthenticatedUser(req);
+      if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+
+      const email = String(req.body.email || "").trim().toLowerCase();
+      if (!email) return res.status(400).json({ error: "email obrigatório" });
+
+      const user = await User.findOne({ email: new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") });
+      if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+      const organizationId = getUserOrganizationId(authUser);
+      const userOrganizationId = getUserOrganizationId(user);
+      const ownsOnlySelf = userOrganizationId === String(user._id) && user.role !== "owner";
+      if (user.organizationId && userOrganizationId !== organizationId && !ownsOnlySelf) {
+        return res.status(409).json({ error: "Usuário já pertence a outra organização" });
+      }
+
+      user.organizationId = organizationId;
+      await user.save();
+
+      io.emit("refreshData");
+      return res.json(sanitizeUser(user));
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao vincular usuário" });
+    }
+  });
+
   router.put("/users/:id/work-days", verifyToken, async (req, res) => {
     try {
       const { id } = req.params;
       const { blockedDates, extraWorkDates, blockedSlots, workDays, workSchedule, workSchedules, interval } = req.body;
+
+      const authUser = await getAuthenticatedUser(req);
+      if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+
+      const targetUser = await User.findById(id).select("-password -passwordResetToken -passwordResetExpires");
+      if (!targetUser) return res.status(404).json({ error: "Usuário não encontrado" });
+      if (getUserOrganizationId(targetUser) !== getUserOrganizationId(authUser)) {
+        return res.status(403).json({ error: "Usuário fora da sua organização" });
+      }
 
       const update = {};
       if (blockedDates !== undefined) update.blockedDates = blockedDates;
@@ -108,7 +174,7 @@ export const createUserRouter = (io) => {
         update.interval = intervalNumber;
       }
 
-      const user = await User.findByIdAndUpdate(id, update, { new: true }).select("-password");
+      const user = await User.findByIdAndUpdate(id, update, { new: true }).select("-password -passwordResetToken -passwordResetExpires");
       if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
       io.emit("refreshData");

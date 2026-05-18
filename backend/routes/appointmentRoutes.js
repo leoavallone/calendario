@@ -55,6 +55,41 @@ const buildPhoneQuery = (phone) => {
   };
 };
 
+const getUserOrganizationId = (user) => user?.organizationId || String(user?._id || "");
+
+const getAuthenticatedUser = async (req) => {
+  const user = await User.findById(req.userId);
+  if (!user) return null;
+
+  if (!user.organizationId) {
+    user.organizationId = String(user._id);
+    await user.save();
+  }
+
+  return user;
+};
+
+const ensureUserInOrganization = async (req, res, userId) => {
+  const authUser = await getAuthenticatedUser(req);
+  if (!authUser) {
+    res.status(404).json({ error: "Usuário não encontrado" });
+    return null;
+  }
+
+  const targetUser = await User.findById(userId);
+  if (!targetUser) {
+    res.status(404).json({ error: "Usuário não encontrado" });
+    return null;
+  }
+
+  if (getUserOrganizationId(targetUser) !== getUserOrganizationId(authUser)) {
+    res.status(403).json({ error: "Usuário fora da sua organização" });
+    return null;
+  }
+
+  return targetUser;
+};
+
 export const createAppointmentRouter = (io) => {
   const router = express.Router();
 
@@ -62,8 +97,8 @@ export const createAppointmentRouter = (io) => {
     try {
       const { date, userId } = req.query;
 
-      const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+      const user = await ensureUserInOrganization(req, res, userId);
+      if (!user) return;
 
       const appointments = await Appointment.find({ date, userId });
       const workSchedule = getWorkScheduleForDate(user, date);
@@ -87,6 +122,8 @@ export const createAppointmentRouter = (io) => {
     try {
       const { userId } = req.query;
       if (!userId) return res.status(400).json({ error: "userId obrigatório" });
+      const user = await ensureUserInOrganization(req, res, userId);
+      if (!user) return;
 
       const appointments = await Appointment.find({ userId });
       return res.json(appointments);
@@ -102,7 +139,16 @@ export const createAppointmentRouter = (io) => {
       if (!phoneQuery) return res.status(400).json({ error: "phone obrigatório" });
 
       const query = { ...phoneQuery };
-      if (userId) query.userId = userId;
+      if (userId) {
+        const user = await ensureUserInOrganization(req, res, userId);
+        if (!user) return;
+        query.userId = userId;
+      } else {
+        const authUser = await getAuthenticatedUser(req);
+        if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+        const teamUsers = await User.find({ organizationId: getUserOrganizationId(authUser) }).select("_id");
+        query.userId = { $in: teamUsers.map((user) => String(user._id)) };
+      }
 
       const appointments = await Appointment.find(query).sort({ date: 1, time: 1, createdAt: 1 });
       return res.json(appointments);
@@ -118,8 +164,8 @@ export const createAppointmentRouter = (io) => {
     async (req, res) => {
       try {
         const { date, time } = req.body;
-        const user = await User.findById(req.body.userId);
-        if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+        const user = await ensureUserInOrganization(req, res, req.body.userId);
+        if (!user) return;
         if (isSlotBlockedForUser(user, date, time)) {
           return res.status(400).json({ error: "Horário está bloqueado" });
         }
@@ -148,12 +194,14 @@ export const createAppointmentRouter = (io) => {
         const { id } = req.params;
         const currentAppointment = await Appointment.findById(id);
         if (!currentAppointment) return res.status(404).json({ error: "Agendamento não encontrado" });
+        const currentUser = await ensureUserInOrganization(req, res, currentAppointment.userId);
+        if (!currentUser) return;
 
         const nextUserId = req.body.userId || currentAppointment.userId;
         const nextDate = req.body.date || currentAppointment.date;
         const nextTime = req.body.time || currentAppointment.time;
-        const user = await User.findById(nextUserId);
-        if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+        const user = await ensureUserInOrganization(req, res, nextUserId);
+        if (!user) return;
 
         const changedSlot = String(nextUserId) !== String(currentAppointment.userId) ||
           nextDate !== currentAppointment.date ||
@@ -204,6 +252,16 @@ export const createAppointmentRouter = (io) => {
       if (date) query.date = date;
       if (time) query.time = time;
 
+      if (userId) {
+        const user = await ensureUserInOrganization(req, res, userId);
+        if (!user) return;
+      } else {
+        const authUser = await getAuthenticatedUser(req);
+        if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+        const teamUsers = await User.find({ organizationId: getUserOrganizationId(authUser) }).select("_id");
+        query.userId = { $in: teamUsers.map((user) => String(user._id)) };
+      }
+
       const matches = await Appointment.find(query).sort({ date: 1, time: 1, createdAt: 1 });
       if (!matches.length) return res.status(404).json({ error: "Agendamento não encontrado" });
 
@@ -230,6 +288,10 @@ export const createAppointmentRouter = (io) => {
     try {
       const { id } = req.params;
       const { userId } = req.query;
+      if (!userId) return res.status(400).json({ error: "userId obrigatório" });
+      const user = await ensureUserInOrganization(req, res, userId);
+      if (!user) return;
+
       const appointment = await Appointment.findOneAndDelete({ _id: id, userId });
 
       if (!appointment) return res.status(404).json({ error: "Agendamento não encontrado" });
