@@ -24,5 +24,9 @@ export const createPageRouter = (publicDir) => {
     res.sendFile(path.join(publicDir, "finance.html"));
   });
 
+  router.get("/clientes", (req, res) => {
+    res.sendFile(path.join(publicDir, "clientes.html"));
+  });
+
   return router;
 };

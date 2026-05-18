@@ -85,10 +85,13 @@ Acionado pelo n8n quando o consumidor confirmar qual horário e data do WhatsApp
   "title": "Corte de Cabelo (Agendado pelo WhatsApp)",
   "date": "2026-05-10",
   "time": "15:30",
+  "customerName": "Nome do Cliente",
   "phone": "+55 (11) 99999-9999",
   "description": "Via WhatsApp do número: +55 (11) 9...."
 }
 ```
+
+Ao enviar `phone`, o sistema cria ou atualiza automaticamente o cadastro do cliente dentro da organização. Esse dado alimenta relatórios anuais e histórico de recorrência.
 
 ### 2.3 `GET /api/appointments/by-phone`
 Lista os agendamentos vinculados a um número de telefone. Funciona tanto para novos agendamentos com o campo `phone` quanto para registros antigos onde o número ficou dentro de `description`.
@@ -96,7 +99,14 @@ Lista os agendamentos vinculados a um número de telefone. Funciona tanto para n
 * **Query Params:** `phone` obrigatório, `userId` opcional.
 * **Exemplo:** `/api/appointments/by-phone?phone=5511999999999`
 
-### 2.4 `POST /api/appointments/cancel`
+### 2.4 `GET /api/appointments/by-date`
+Lista os agendamentos de um dia. Útil para automações de lembrete, por exemplo buscar hoje os clientes agendados para amanhã.
+* **Header:** `Authorization: Bearer <SEU_TOKEN>`
+* **Query Params:** `date` obrigatório no formato `YYYY-MM-DD`, `userId` opcional.
+* **Exemplo geral:** `/api/appointments/by-date?date=2026-05-10`
+* **Exemplo por profissional:** `/api/appointments/by-date?date=2026-05-10&userId=ID_DO_BARBEIRO`
+
+### 2.5 `POST /api/appointments/cancel`
 Cancela um agendamento pelo `appointmentId` ou pelo telefone. Para evitar cancelamento errado, se o telefone encontrar mais de um agendamento, a API retorna `409` com a lista e pede para informar `appointmentId`, `date` ou `time`.
 * **Header:** `Authorization: Bearer <SEU_TOKEN>`
 * **Corpo JSON por telefone:**
@@ -116,11 +126,40 @@ Cancela um agendamento pelo `appointmentId` ou pelo telefone. Para evitar cancel
 
 ---
 
-## 3. Finanças e Caixa (Lançamento Automático via Automação)
+## 3. Clientes e Relatórios
+
+### 3.1 `GET /api/customers`
+Lista clientes da organização. Aceita busca por nome ou telefone.
+* **Header:** `Authorization: Bearer <SEU_TOKEN>`
+* **Exemplo:** `/api/customers?search=5511999999999`
+
+### 3.2 `GET /api/customers/report`
+Gera ranking de clientes por quantidade de agendamentos em um ano.
+* **Header:** `Authorization: Bearer <SEU_TOKEN>`
+* **Query Params:** `year` opcional, padrão ano atual.
+* **Exemplo:** `/api/customers/report?year=2026`
+
+### 3.3 `GET /api/customers/:id/appointments`
+Lista o histórico de agendamentos de um cliente.
+* **Header:** `Authorization: Bearer <SEU_TOKEN>`
+
+### 3.4 `PUT /api/users/:id/commission`
+Define o percentual de comissão de um profissional. Apenas `owner`.
+* **Header:** `Authorization: Bearer <TOKEN_DO_DONO>`
+* **Corpo JSON:**
+```json
+{
+  "commissionRate": 40
+}
+```
+
+---
+
+## 4. Finanças e Caixa (Lançamento Automático via Automação)
 
 A gestão financeira foi migrada para exclusividade de visualização aos usuários com o `role: "owner"`. Como o sistema será alimentado via WhatsApp e as baixas serão diretas, **logo após o n8n criar o agendamento (Passo 2.2)**, você pode engatar um segundo bloco enviando o valor para a rota de Finanças, registrando o pagamento automaticamente!
 
-### 3.1 `POST /api/transactions`
+### 4.1 `POST /api/transactions`
 * **Header:** `Authorization: Bearer <SEU_TOKEN>`
 * **Corpo JSON (Exemplo após o ciente agendar e pagar):**
 ```json

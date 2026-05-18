@@ -2,6 +2,7 @@ import express from "express";
 import { verifyToken } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
 import { Appointment } from "../models/Appointments.js";
+import { Customer } from "../models/Customer.js";
 import { User } from "../models/User.js";
 import {
   createAppointmentSchema,
@@ -90,6 +91,50 @@ const ensureUserInOrganization = async (req, res, userId) => {
   return targetUser;
 };
 
+const upsertCustomerFromAppointment = async ({ appointment, organizationId, incrementTotal = true }) => {
+  const phoneNormalized = normalizePhone(appointment.phone) || extractPhoneFromText(appointment.description);
+  if (!phoneNormalized) return appointment;
+
+  const customerName = String(appointment.customerName || appointment.title || "").trim();
+  const appointmentDateTime = `${appointment.date} ${appointment.time}`;
+  const existingCustomer = await Customer.findOne({ organizationId, phoneNormalized });
+
+  if (existingCustomer) {
+    if (customerName && (!existingCustomer.name || existingCustomer.name === existingCustomer.phone)) {
+      existingCustomer.name = customerName;
+    }
+    if (appointment.phone) existingCustomer.phone = appointment.phone;
+    if (incrementTotal) {
+      existingCustomer.totalAppointments = (existingCustomer.totalAppointments || 0) + 1;
+    }
+    if (!existingCustomer.firstAppointmentAt || appointmentDateTime < existingCustomer.firstAppointmentAt) {
+      existingCustomer.firstAppointmentAt = appointmentDateTime;
+    }
+    if (!existingCustomer.lastAppointmentAt || appointmentDateTime > existingCustomer.lastAppointmentAt) {
+      existingCustomer.lastAppointmentAt = appointmentDateTime;
+    }
+    await existingCustomer.save();
+
+    appointment.customerId = String(existingCustomer._id);
+    appointment.customerName = existingCustomer.name || customerName;
+    return appointment;
+  }
+
+  const customer = await Customer.create({
+    organizationId,
+    name: customerName || appointment.phone || phoneNormalized,
+    phone: appointment.phone,
+    phoneNormalized,
+    firstAppointmentAt: appointmentDateTime,
+    lastAppointmentAt: appointmentDateTime,
+    totalAppointments: 1,
+  });
+
+  appointment.customerId = String(customer._id);
+  appointment.customerName = customer.name;
+  return appointment;
+};
+
 export const createAppointmentRouter = (io) => {
   const router = express.Router();
 
@@ -157,6 +202,43 @@ export const createAppointmentRouter = (io) => {
     }
   });
 
+  router.get("/appointments/by-date", verifyToken, async (req, res) => {
+    try {
+      const { date, userId } = req.query;
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ error: "date obrigatório no formato YYYY-MM-DD" });
+      }
+
+      const query = { date };
+      if (userId) {
+        const user = await ensureUserInOrganization(req, res, userId);
+        if (!user) return;
+        query.userId = userId;
+      } else {
+        const authUser = await getAuthenticatedUser(req);
+        if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+        const teamUsers = await User.find({ organizationId: getUserOrganizationId(authUser) }).select("_id");
+        query.userId = { $in: teamUsers.map((user) => String(user._id)) };
+      }
+
+      const appointments = await Appointment.find(query).sort({ time: 1, createdAt: 1 });
+      const userIds = [...new Set(appointments.map((appointment) => String(appointment.userId)))];
+      const users = await User.find({ _id: { $in: userIds } }).select("name email");
+      const usersById = new Map(users.map((user) => [String(user._id), user]));
+
+      return res.json({
+        date,
+        count: appointments.length,
+        appointments: appointments.map((appointment) => ({
+          ...appointment.toObject(),
+          professional: usersById.get(String(appointment.userId)) || null,
+        })),
+      });
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao buscar agendamentos por data" });
+    }
+  });
+
   router.post(
     "/appointments",
     verifyToken,
@@ -174,7 +256,11 @@ export const createAppointmentRouter = (io) => {
 
         if (exists) return res.status(400).json({ error: "Horário já está ocupado" });
 
-        const appointment = new Appointment(applyPhoneMetadata(req.body));
+        const appointmentPayload = await upsertCustomerFromAppointment({
+          appointment: applyPhoneMetadata(req.body),
+          organizationId: getUserOrganizationId(user),
+        });
+        const appointment = new Appointment(appointmentPayload);
         await appointment.save();
 
         io.emit("refreshData");
@@ -220,7 +306,19 @@ export const createAppointmentRouter = (io) => {
           if (exists) return res.status(400).json({ error: "Horário já está ocupado" });
         }
 
-        const appointment = await Appointment.findByIdAndUpdate(id, applyPhoneMetadataForUpdate(req.body), { new: true });
+        const updatePayload = applyPhoneMetadataForUpdate(req.body);
+        const appointmentPayload = await upsertCustomerFromAppointment({
+          appointment: {
+            ...currentAppointment.toObject(),
+            ...updatePayload,
+            userId: nextUserId,
+            date: nextDate,
+            time: nextTime,
+          },
+          organizationId: getUserOrganizationId(user),
+          incrementTotal: false,
+        });
+        const appointment = await Appointment.findByIdAndUpdate(id, appointmentPayload, { new: true });
 
         io.emit("refreshData");
         return res.json(appointment);

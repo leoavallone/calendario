@@ -97,6 +97,36 @@ export const createUserRouter = (io) => {
     }
   });
 
+  router.put("/users/:id/commission", verifyToken, async (req, res) => {
+    try {
+      if (req.userRole !== "owner") {
+        return res.status(403).json({ error: "Apenas donos podem alterar comissão" });
+      }
+
+      const authUser = await getAuthenticatedUser(req);
+      if (!authUser) return res.status(404).json({ error: "Usuário não encontrado" });
+
+      const targetUser = await User.findById(req.params.id).select("-password -passwordResetToken -passwordResetExpires");
+      if (!targetUser) return res.status(404).json({ error: "Usuário não encontrado" });
+      if (getUserOrganizationId(targetUser) !== getUserOrganizationId(authUser)) {
+        return res.status(403).json({ error: "Usuário fora da sua organização" });
+      }
+
+      const commissionRate = Number(req.body.commissionRate);
+      if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 100) {
+        return res.status(400).json({ error: "Percentual de comissão inválido" });
+      }
+
+      targetUser.commissionRate = commissionRate;
+      await targetUser.save();
+
+      io.emit("refreshData");
+      return res.json(sanitizeUser(targetUser));
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao atualizar comissão" });
+    }
+  });
+
   router.put("/users/:id/work-days", verifyToken, async (req, res) => {
     try {
       const { id } = req.params;

@@ -28,6 +28,7 @@ const UserSchema = new mongoose.Schema({
   passwordResetToken: { type: String },
   passwordResetExpires: { type: Date },
   organizationId: { type: String, index: true },
+  commissionRate: { type: Number, default: 0, min: 0, max: 100 },
   role: { type: String, enum: ['owner', 'barber'], default: 'barber' }
 });
 

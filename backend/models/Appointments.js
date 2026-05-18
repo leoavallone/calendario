@@ -8,6 +8,8 @@ const AppointmentSchema = new mongoose.Schema(
     time: { type: String, required: true },
     phone: { type: String },
     phoneNormalized: { type: String, index: true },
+    customerId: { type: String, index: true },
+    customerName: { type: String },
     description: { type: String },
   },
   { timestamps: true }

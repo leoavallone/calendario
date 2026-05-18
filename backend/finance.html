@@ -181,6 +181,13 @@
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
         .badge-income { background: rgba(16,185,129,0.1); color: var(--success); }
         .badge-expense { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .commission-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        .commission-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: var(--surface-soft); }
+        .commission-card h3 { font-size: 1rem; margin-bottom: 10px; color: var(--text); }
+        .commission-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+        .commission-metric span { display: block; font-size: 0.75rem; color: var(--text-light); margin-bottom: 3px; }
+        .commission-metric strong { font-size: 1rem; color: var(--text); }
+        .commission-rate-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
 
         .api-docs { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: var(--white); border-radius: 16px; padding: 25px; }
         .api-docs h2 { color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
@@ -249,6 +256,7 @@
             
             <nav class="navbar">
                 <a href="index.html" class="nav-link">📅 Agenda</a>
+                <a href="clientes.html" class="nav-link">👥 Clientes</a>
                 <a href="finance.html" class="nav-link active">💰 Financeiro</a>
             </nav>
 
@@ -288,6 +296,17 @@
                     <h3>Saldo Atual</h3>
                     <p id="totalBalance">R$ 0,00</p>
                 </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>🤝</span> Comissionamento
+                </div>
+            </div>
+            <div class="commission-grid" id="commissionGrid">
+                <p style="color: var(--text-light);">Carregando comissões...</p>
             </div>
         </div>
 
@@ -340,6 +359,10 @@
                         <option value="income">Receita (Ganho)</option>
                         <option value="expense">Despesa (Custo)</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>Profissional</label>
+                    <select id="tUser" required></select>
                 </div>
                 <div class="form-group">
                     <label>Descrição / Nome do Cliente</label>
@@ -469,6 +492,7 @@
                 }
 
                 if (currentUser) {
+                    renderTransactionUserOptions();
                     await loadTransactions();
                 }
             } catch (err) {
@@ -482,6 +506,14 @@
             if (!el || !user) return;
             el.textContent = user.name || user.email || 'Conta logada';
             el.title = `Logado como ${el.textContent}`;
+        }
+
+        function renderTransactionUserOptions(selectedUserId = currentUser?._id) {
+            const select = document.getElementById('tUser');
+            if (!select) return;
+            select.innerHTML = usersData.map(user => (
+                `<option value="${user._id}" ${user._id === selectedUserId ? 'selected' : ''}>${user.name || user.email}</option>`
+            )).join('');
         }
 
         function changeMonth(delta) {
@@ -501,8 +533,12 @@
             try {
                 const month = currentFinanceDate.getMonth() + 1;
                 const year = currentFinanceDate.getFullYear();
-                const res = await apiFetch(`/api/transactions?userId=${currentUser._id}&month=${month}&year=${year}`, { headers: authHeaders });
-                let data = await res.json();
+                const teamResponses = await Promise.all(usersData.map(async (user) => {
+                    const res = await apiFetch(`/api/transactions?userId=${user._id}&month=${month}&year=${year}`, { headers: authHeaders });
+                    if (!res.ok) return [];
+                    return res.json();
+                }));
+                let data = teamResponses.flat();
                 
                 // Filter by month
                 data = data.filter(t => {
@@ -511,8 +547,79 @@
                 });
                 
                 renderTransactions(data);
+                await loadCommissionData();
             } catch (err) {
                 showNotification('Erro buscar transações', 'error');
+            }
+        }
+
+        async function loadCommissionData() {
+            const grid = document.getElementById('commissionGrid');
+            if (!grid || !usersData.length) return;
+
+            const month = currentFinanceDate.getMonth() + 1;
+            const year = currentFinanceDate.getFullYear();
+            const rows = await Promise.all(usersData.map(async (user) => {
+                const res = await apiFetch(`/api/transactions?userId=${user._id}&month=${month}&year=${year}`, { headers: authHeaders });
+                if (!res.ok) return { user, income: 0 };
+                const transactions = await res.json();
+                const income = transactions
+                    .filter((t) => {
+                        const datePart = t.date.split('-');
+                        return t.type === 'income' &&
+                            parseInt(datePart[0], 10) === year &&
+                            parseInt(datePart[1], 10) === month;
+                    })
+                    .reduce((sum, t) => sum + (Number(t.amount) * Math.max(parseInt(t.quantity || 1, 10), 1)), 0);
+                return { user, income };
+            }));
+
+            grid.innerHTML = rows.map(({ user, income }) => {
+                const rate = Number(user.commissionRate || 0);
+                const commission = income * (rate / 100);
+                return `
+                    <div class="commission-card">
+                        <h3>${user.name || user.email}</h3>
+                        <div class="commission-metrics">
+                            <div class="commission-metric">
+                                <span>Receita do mês</span>
+                                <strong>${formatCurrency(income)}</strong>
+                            </div>
+                            <div class="commission-metric">
+                                <span>Comissão</span>
+                                <strong>${formatCurrency(commission)}</strong>
+                            </div>
+                        </div>
+                        <div class="commission-rate-row">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label for="commission_${user._id}">Percentual (%)</label>
+                                <input type="number" id="commission_${user._id}" min="0" max="100" step="0.01" value="${rate}">
+                            </div>
+                            <button class="btn btn-primary" onclick="saveCommissionRate('${user._id}')">Salvar</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function saveCommissionRate(userId) {
+            const input = document.getElementById(`commission_${userId}`);
+            const commissionRate = parseFloat(input.value);
+            try {
+                const res = await apiFetch(`/api/users/${userId}/commission`, {
+                    method: 'PUT',
+                    headers: jsonHeaders,
+                    body: JSON.stringify({ commissionRate })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Erro ao salvar comissão');
+
+                const index = usersData.findIndex(user => user._id === userId);
+                if (index >= 0) usersData[index] = data;
+                showNotification('Comissão atualizada! ✅');
+                loadCommissionData();
+            } catch (err) {
+                showNotification(err.message || 'Erro ao salvar comissão', 'error');
             }
         }
 
@@ -552,16 +659,18 @@
                     ? '<span class="badge badge-income">Receita</span>' 
                     : '<span class="badge badge-expense">Despesa</span>';
                 const quantityText = quantity > 1 ? `<br><small>${quantity} x ${formatCurrency(t.amount)}</small>` : '';
+                const professional = usersData.find(user => user._id === t.userId);
+                const professionalText = professional ? `<br><small>${professional.name || professional.email}</small>` : '';
 
                 return `
                     <tr>
                         <td>${formattedDate}</td>
-                        <td><strong>${t.description}</strong></td>
+                        <td><strong>${t.description}</strong>${professionalText}</td>
                         <td>${badge}</td>
                         <td style="font-weight: 500;">${formatCurrency(totalAmount)}${quantityText}</td>
                         <td>
                             <div style="display: flex; gap: 5px; align-items: center;">
-                                <button class="btn btn-secondary" style="padding: 5px 10px; color: var(--text);" onclick="editTransaction('${t._id}', '${t.type}', '${t.description.replace(/'/g, "\\'")}', ${t.amount}, '${t.date}', ${quantity})">✏️</button>
+                                <button class="btn btn-secondary" style="padding: 5px 10px; color: var(--text);" onclick="editTransaction('${t._id}', '${t.type}', '${t.description.replace(/'/g, "\\'")}', ${t.amount}, '${t.date}', ${quantity}, '${t.userId}')">✏️</button>
                                 <button class="btn btn-danger-outline" style="padding: 5px 10px;" onclick="deleteTransaction('${t._id}')">X</button>
                             </div>
                         </td>
@@ -580,7 +689,7 @@
 
             const id = document.getElementById('tId').value;
             const payload = {
-                userId: currentUser._id,
+                userId: document.getElementById('tUser').value,
                 type: document.getElementById('tType').value,
                 description: document.getElementById('tDesc').value,
                 amount: parseFloat(document.getElementById('tAmount').value),
@@ -614,8 +723,9 @@
             }
         }
 
-        function editTransaction(id, type, desc, amount, date, quantity = 1) {
+        function editTransaction(id, type, desc, amount, date, quantity = 1, userId = currentUser?._id) {
             document.getElementById('tId').value = id;
+            renderTransactionUserOptions(userId);
             document.getElementById('tType').value = type;
             document.getElementById('tDesc').value = desc;
             document.getElementById('tAmount').value = amount;
@@ -649,6 +759,7 @@
             const today = new Date();
             document.getElementById('tDate').value = today.toISOString().split('T')[0];
             document.getElementById('tQuantity').value = 1;
+            renderTransactionUserOptions(currentUser?._id);
             document.getElementById('transactionModal').classList.add('active'); 
         }
         function closeModal() {

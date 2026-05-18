@@ -6,6 +6,8 @@ export const createAppointmentSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
   time: z.string().regex(/^\d{2}:\d{2}$/, "Formato HH:MM"),
   phone: z.string().optional(),
+  customerId: z.string().optional(),
+  customerName: z.string().optional(),
   description: z.string().optional(),
 });
 
@@ -21,5 +23,7 @@ export const updateAppointmentSchema = z.object({
     .regex(/^\d{2}:\d{2}$/)
     .optional(),
   phone: z.string().optional(),
+  customerId: z.string().optional(),
+  customerName: z.string().optional(),
   description: z.string().optional(),
 });

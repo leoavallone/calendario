@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 import { connectDB } from "./db.js";
 import { createAppointmentRouter } from "./routes/appointmentRoutes.js";
 import { createAuthRouter } from "./routes/authRoutes.js";
+import { createCustomerRouter } from "./routes/customerRoutes.js";
 import { createFixedExpenseRouter } from "./routes/fixedExpenseRoutes.js";
 import { createPageRouter } from "./routes/pageRoutes.js";
 import { createTransactionRouter } from "./routes/transactionRoutes.js";
@@ -40,6 +41,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", createAuthRouter());
 app.use("/api", createAppointmentRouter(io));
+app.use("/api", createCustomerRouter());
 app.use("/api", createUserRouter(io));
 app.use("/api", createTransactionRouter(io));
 app.use("/api", createFixedExpenseRouter(io));
